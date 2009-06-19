@@ -21,7 +21,7 @@ require 'wikis_controller'
 # Re-raise errors caught by the controller.
 class WikisController; def rescue_action(e) raise e end; end
 
-class WikisControllerTest < ActiveSupport::TestCase
+class WikisControllerTest < ActionController::TestCase
   fixtures :projects, :users, :roles, :members, :member_roles, :enabled_modules, :wikis
   
   def setup
