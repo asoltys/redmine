@@ -13,7 +13,7 @@ require 'net/ldif'
 require 'sha1'
 require 'base64'
 
-class TestLdif < Test::Unit::TestCase
+class TestLdif < ActiveSupport::TestCase
 
   TestLdifFilename = "tests/testdata.ldif"
 

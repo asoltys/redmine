@@ -9,7 +9,7 @@ require 'net/ldap'
 require 'stringio'
 
 
-class TestPassword < Test::Unit::TestCase
+class TestPassword < ActiveSupport::TestCase
 
   def setup
   end

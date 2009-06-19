@@ -122,7 +122,7 @@ __END__
 
 require 'test/unit'
 
-class TC_FileType < Test::Unit::TestCase
+class TC_FileType < ActiveSupport::TestCase
 
   def test_fetch
     assert_raise FileType::UnknownFileType do

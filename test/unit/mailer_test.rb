@@ -17,7 +17,7 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class MailerTest < Test::Unit::TestCase
+class MailerTest < ActiveSupport::TestCase
   include Redmine::I18n
   fixtures :projects, :issues, :users, :members, :member_roles, :documents, :attachments, :news, :tokens, :journals, :journal_details, :changesets, :trackers, :issue_statuses, :enumerations, :messages, :boards, :repositories
   

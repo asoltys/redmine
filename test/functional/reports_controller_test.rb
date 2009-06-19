@@ -22,7 +22,7 @@ require 'reports_controller'
 class ReportsController; def rescue_action(e) raise e end; end
 
 
-class ReportsControllerTest < Test::Unit::TestCase
+class ReportsControllerTest < ActiveSupport::TestCase
   fixtures :all
   
   def setup

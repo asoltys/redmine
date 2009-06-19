@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/helper'
 require File.dirname(__FILE__) + '/../init'
 
-class PaginationHelperTest < Test::Unit::TestCase
+class PaginationHelperTest < ActiveSupport::TestCase
   include ActionController::Pagination
   include ActionView::Helpers::PaginationHelper
   include ActionView::Helpers::UrlHelper

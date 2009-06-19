@@ -8,7 +8,7 @@ class OpenIdAuthentication::MemCacheStore < OpenID::Store::Interface
   end
 end
 
-class MemCacheStoreTest < Test::Unit::TestCase
+class MemCacheStoreTest < ActiveSupport::TestCase
   ALLOWED_HANDLE = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
 
   def setup

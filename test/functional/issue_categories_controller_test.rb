@@ -21,7 +21,7 @@ require 'issue_categories_controller'
 # Re-raise errors caught by the controller.
 class IssueCategoriesController; def rescue_action(e) raise e end; end
 
-class IssueCategoriesControllerTest < Test::Unit::TestCase
+class IssueCategoriesControllerTest < ActiveSupport::TestCase
   fixtures :projects, :users, :members, :member_roles, :roles, :enabled_modules, :issue_categories
   
   def setup

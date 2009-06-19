@@ -21,7 +21,7 @@ require 'queries_controller'
 # Re-raise errors caught by the controller.
 class QueriesController; def rescue_action(e) raise e end; end
 
-class QueriesControllerTest < Test::Unit::TestCase
+class QueriesControllerTest < ActiveSupport::TestCase
   fixtures :projects, :users, :members, :member_roles, :roles, :trackers, :issue_statuses, :issue_categories, :enumerations, :issues, :custom_fields, :custom_values, :queries
   
   def setup

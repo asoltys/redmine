@@ -4,7 +4,7 @@ class Note < ActiveRecord::Base
   acts_as_nested_set :scope => [:notable_id, :notable_type]
 end
 
-class AwesomeNestedSetTest < Test::Unit::TestCase
+class AwesomeNestedSetTest < ActiveSupport::TestCase
 
   class Default < ActiveRecord::Base
     acts_as_nested_set

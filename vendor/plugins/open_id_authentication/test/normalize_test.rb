@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/test_helper'
 
-class NormalizeTest < Test::Unit::TestCase
+class NormalizeTest < ActiveSupport::TestCase
   include OpenIdAuthentication
 
   NORMALIZATIONS = {

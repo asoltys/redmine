@@ -78,7 +78,7 @@ module Engines::Testing
                               self.temporary_fixtures_directory)
   end
   
-  # Sets the fixture path used by Test::Unit::TestCase to the temporary
+  # Sets the fixture path used by ActiveSupport::TestCase to the temporary
   # directory which contains all plugin fixtures.
   def self.set_fixture_path
     ActiveSupport::TestCase.fixture_path = self.temporary_fixtures_directory

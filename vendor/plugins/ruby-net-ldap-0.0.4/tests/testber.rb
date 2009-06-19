@@ -9,7 +9,7 @@ require 'net/ldap'
 require 'stringio'
 
 
-class TestBer < Test::Unit::TestCase
+class TestBer < ActiveSupport::TestCase
 
   def setup
   end

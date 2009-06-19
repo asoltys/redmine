@@ -9,7 +9,7 @@ $:.unshift "lib"
 require 'net/ldap'
 
 
-class TestFilter < Test::Unit::TestCase
+class TestFilter < ActiveSupport::TestCase
 
   def setup
   end

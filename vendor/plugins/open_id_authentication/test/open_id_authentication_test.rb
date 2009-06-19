@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/test_helper'
 
-class OpenIdAuthenticationTest < Test::Unit::TestCase
+class OpenIdAuthenticationTest < ActiveSupport::TestCase
   def setup
     @controller = Class.new do
       include OpenIdAuthentication

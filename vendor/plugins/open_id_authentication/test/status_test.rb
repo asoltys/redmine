@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/test_helper'
 
-class StatusTest < Test::Unit::TestCase
+class StatusTest < ActiveSupport::TestCase
   include OpenIdAuthentication
 
   def test_state_conditional

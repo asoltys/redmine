@@ -21,7 +21,7 @@ require 'application'
 # Re-raise errors caught by the controller.
 class ApplicationController; def rescue_action(e) raise e end; end
 
-class ApplicationControllerTest < Test::Unit::TestCase
+class ApplicationControllerTest < ActiveSupport::TestCase
   include Redmine::I18n
   
   def setup

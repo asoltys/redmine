@@ -11,7 +11,7 @@ require 'net/ldap'
 require 'stringio'
 
 
-class TestLdapClient < Test::Unit::TestCase
+class TestLdapClient < ActiveSupport::TestCase
 
   # TODO: these tests crash and burn if the associated
   # LDAP testserver isn't up and running.
