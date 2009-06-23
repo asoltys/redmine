@@ -16,18 +16,17 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 require 'redmine/scm/adapters/abstract_adapter'
+require 'grit'
 
 module Redmine
   module Scm
     module Adapters    
       class GitAdapter < AbstractAdapter
-        
         # Git executable name
         GIT_BIN = "git"
 
         # Get the revision of a particuliar file
         def get_rev (rev,path)
-        
           if rev != 'latest' && !rev.nil?
             cmd="#{GIT_BIN} --git-dir #{target('')} show --date=iso --pretty=fuller #{shell_quote rev} -- #{shell_quote path}" 
           else
@@ -80,6 +79,7 @@ module Redmine
                 changeset[:description] << line
               end
             end	
+
             rev = Revision.new({:identifier => changeset[:commit],
                                 :scmid => changeset[:commit],
                                 :author => changeset[:author],
@@ -134,84 +134,28 @@ module Redmine
           return nil if $? && $?.exitstatus != 0
           entries.sort_by_name
         end
-        
+
         def revisions(path, identifier_from, identifier_to, options={})
+          repo = Grit::Repo.new(url, :is_bare => true)
           revisions = Revisions.new
-          cmd = "#{GIT_BIN} --git-dir #{target('')} log --raw --date=iso --pretty=fuller"
-          cmd << " --reverse" if options[:reverse]
-          cmd << " -n #{options[:limit].to_i} " if (!options.nil?) && options[:limit]
-          cmd << " #{shell_quote(identifier_from + '..')} " if identifier_from
-          cmd << " #{shell_quote identifier_to} " if identifier_to
-          shellout(cmd) do |io|
-            files=[]
-            changeset = {}
-            parsing_descr = 0  #0: not parsing desc or files, 1: parsing desc, 2: parsing files
-            revno = 1
 
-            io.each_line do |line|
-              if line =~ /^commit ([0-9a-f]{40})$/
-                key = "commit"
-                value = $1
-                if (parsing_descr == 1 || parsing_descr == 2)
-                  parsing_descr = 0
-                  revision = Revision.new({:identifier => changeset[:commit],
-                                           :scmid => changeset[:commit],
-                                           :author => changeset[:author],
-                                           :time => Time.parse(changeset[:date]),
-                                           :message => changeset[:description],
-                                           :paths => files
-                                          })
-                  if block_given?
-                    yield revision
-                  else
-                    revisions << revision
-                  end
-                  changeset = {}
-                  files = []
-                  revno = revno + 1
-                end
-                changeset[:commit] = $1
-              elsif (parsing_descr == 0) && line =~ /^(\w+):\s*(.*)$/
-                key = $1
-                value = $2
-                if key == "Author"
-                  changeset[:author] = value
-                elsif key == "CommitDate"
-                  changeset[:date] = value
-                end
-              elsif (parsing_descr == 0) && line.chomp.to_s == ""
-                parsing_descr = 1
-                changeset[:description] = ""
-              elsif (parsing_descr == 1 || parsing_descr == 2) && line =~ /^:\d+\s+\d+\s+[0-9a-f.]+\s+[0-9a-f.]+\s+(\w)\s+(.+)$/
-                parsing_descr = 2
-                fileaction = $1
-                filepath = $2
-                files << {:action => fileaction, :path => filepath}
-              elsif (parsing_descr == 1) && line.chomp.to_s == ""
-                parsing_descr = 2
-              elsif (parsing_descr == 1)
-                changeset[:description] << line[4..-1]
-              end
-            end	
-
-            if changeset[:commit]
-              revision = Revision.new({:identifier => changeset[:commit],
-                                       :scmid => changeset[:commit],
-                                       :author => changeset[:author],
-                                       :time => Time.parse(changeset[:date]),
-                                       :message => changeset[:description],
-                                       :paths => files
-                                      })
-              if block_given?
-                yield revision
-              else
-                revisions << revision
-              end
+          repo.commits.each do |r|
+            files = []
+            r.stats.files.each do |f|
+              files << {:action => file_action(f), :path => f[0]}
             end
+
+            revisions << Revision.new({
+              :identifier => r.id,
+              :scmid => r.id,
+              :author => r.author.name,
+              :time => r.committed_date,
+              :message => r.message,
+              :paths => files
+            })
           end
 
-          return nil if $? && $?.exitstatus != 0
-          revisions
+          return revisions
         end
         
         def diff(path, identifier_from, identifier_to=nil)
@@ -261,6 +205,14 @@ module Redmine
           end
           return nil if $? && $?.exitstatus != 0
           cat
+        end
+
+        private
+        
+        def file_action(file)
+          return 'A' if file[1] == file[3]
+          return 'D' if file[2] == file[3]
+          return 'M'
         end
       end
     end
