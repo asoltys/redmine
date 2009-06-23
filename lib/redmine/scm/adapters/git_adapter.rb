@@ -139,18 +139,18 @@ module Redmine
           repo = Grit::Repo.new(url, :is_bare => true)
           revisions = Revisions.new
 
-          repo.commits.each do |r|
+          repo.commits.each do |commit|
             files = []
-            r.stats.files.each do |f|
-              files << {:action => file_action(f), :path => f[0]}
+            commit.stats.files.each do |file_stats|
+              files << {:action => file_action(file_stats), :path => file_stats[0]}
             end
 
             revisions << Revision.new({
-              :identifier => r.id,
-              :scmid => r.id,
-              :author => r.author.name,
-              :time => r.committed_date,
-              :message => r.message,
+              :identifier => commit.id,
+              :scmid => commit.id,
+              :author => "#{commit.author.name} <#{commit.author.email}>",
+              :time => commit.committed_date,
+              :message => commit.message,
               :paths => files
             })
           end
@@ -208,10 +208,13 @@ module Redmine
         end
 
         private
-        
-        def file_action(file)
-          return 'A' if file[1] == file[3]
-          return 'D' if file[2] == file[3]
+       
+        # If it was 100% new lines, it's a new file
+        # If it was 100% removed lines, it's a deleted file
+        # Otherwise it's a modified file
+        def file_action(file_stats)
+          return 'A' if file_stats[1] == file_stats[3] 
+          return 'D' if file_stats[2] == file_stats[3]
           return 'M'
         end
       end

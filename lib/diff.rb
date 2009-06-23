@@ -1,4 +1,4 @@
-module Redmine
+module RedmineDiff
   class Diff
 
     VERSION = 0.3
@@ -148,10 +148,8 @@ module Redmine
 end
 
 module Diffable
-  include Redmine
-
   def diff(b)
-    Diff.new(self, b)
+    RedmineDiff::Diff.new(self, b)
   end
 
   # Create a hash that maps elements of the array to arrays of indices
