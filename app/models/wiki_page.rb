@@ -17,7 +17,6 @@
 
 require 'diff'
 require 'enumerator'
-include Redmine
 
 class WikiPage < ActiveRecord::Base
   belongs_to :wiki
