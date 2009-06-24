@@ -110,28 +110,22 @@ module Redmine
         def entries(path=nil, identifier=nil)
           path ||= ''
           entries = Entries.new
-          cmd = "#{GIT_BIN} --git-dir #{target('')} ls-tree -l "
-          cmd << shell_quote("HEAD:" + path) if identifier.nil?
-          cmd << shell_quote(identifier + ":" + path) if identifier
-          shellout(cmd)  do |io|
-            io.each_line do |line|
-              e = line.chomp.to_s
-              if e =~ /^\d+\s+(\w+)\s+([0-9a-f]{40})\s+([0-9-]+)\s+(.+)$/
-                type = $1
-                sha = $2
-                size = $3
-                name = $4
-                entries << Entry.new({:name => name,
-                                       :path => (path.empty? ? name : "#{path}/#{name}"),
-                                       :kind => ((type == "tree") ? 'dir' : 'file'),
-                                       :size => ((type == "tree") ? nil : size),
-                                       :lastrev => get_rev(identifier,(path.empty? ? name : "#{path}/#{name}")) 
-                                                                  
-                                     }) unless entries.detect{|entry| entry.name == name}
-              end
-            end
+          
+          repo = Grit::Repo.new(url, :is_bare => true)
+          tree = Grit::Tree.construct(repo, 'HEAD', path.empty? ? [] : [path])
+
+          tree.contents.each do |file|
+            entries << Entry.new({
+              :name => file.name,
+              :path => (path.empty? ? file.name : "#{path}/#{file.name}"),
+              :kind => file.class == Grit::Blob ? 'file' : 'dir',
+              :size => file.respond_to?('size') ? file.size : nil,
+              :lastrev => get_rev(identifier,(path.empty? ? file.name : "#{path}/#{file.name}")) 
+            })
           end
-          return nil if $? && $?.exitstatus != 0
+
+          debugger
+
           entries.sort_by_name
         end
 
