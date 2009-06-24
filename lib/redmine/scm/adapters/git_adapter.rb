@@ -139,7 +139,7 @@ module Redmine
           repo = Grit::Repo.new(url, :is_bare => true)
           revisions = Revisions.new
 
-          repo.commits.each do |commit|
+          Grit::Commit.find_all(repo,nil).each do |commit|
             files = []
             commit.stats.files.each do |file_stats|
               files << {:action => file_action(file_stats), :path => file_stats[0]}
