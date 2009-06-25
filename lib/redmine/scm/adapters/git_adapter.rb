@@ -115,16 +115,29 @@ module Redmine
           tree = Grit::Tree.construct(repo, 'HEAD', path.empty? ? [] : [path])
 
           tree.contents.each do |file|
+            files = []
+            commit = repo.log('HEAD', file.name).first
+            commit.stats.files.each do |file_stats|
+              files << {:action => file_action(file_stats), :path => file_stats[0]}
+            end
+
+            rev = Revision.new({
+              :identifier => commit.id,
+              :scmid => commit.id,
+              :author => "#{commit.author.name} <#{commit.author.email}>",
+              :time => commit.committed_date,
+              :message => commit.message,
+              :paths => files
+            })
+
             entries << Entry.new({
               :name => file.name,
-              :path => (path.empty? ? file.name : "#{path}/#{file.name}"),
+              :path => file.name,
               :kind => file.class == Grit::Blob ? 'file' : 'dir',
               :size => file.respond_to?('size') ? file.size : nil,
-              :lastrev => get_rev(identifier,(path.empty? ? file.name : "#{path}/#{file.name}")) 
+              :lastrev => rev
             })
           end
-
-          debugger
 
           entries.sort_by_name
         end
