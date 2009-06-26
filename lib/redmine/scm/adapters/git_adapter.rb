@@ -41,12 +41,19 @@ module Redmine
           entries = Entries.new
           
           repo = Grit::Repo.new(url, :is_bare => true)
-          tree = repo.commits.first.tree 
+          
+          if identifier.nil?
+            tree = repo.log.first.tree
+          else
+            tree = repo.log.select{|c| c.id == identifier}.first.tree 
+          end
+
           tree = tree / path unless path.empty?
 
           tree.contents.each do |file|
             files = []
-            commit = repo.log('HEAD', path.empty? ? file.name : "#{path}/#{file.name}").first
+            file_path = path.empty? ? file.name : "#{path}/#{file.name}"
+            commit = repo.log('HEAD', file_path).first
             commit.stats.files.each do |file_stats|
               files << {:action => file_action(file_stats), :path => file_stats[0]}
             end
@@ -62,7 +69,7 @@ module Redmine
 
             entries << Entry.new({
               :name => file.name,
-              :path => file.name,
+              :path => file_path,
               :kind => file.class == Grit::Blob ? 'file' : 'dir',
               :size => file.respond_to?('size') ? file.size : nil,
               :lastrev => rev

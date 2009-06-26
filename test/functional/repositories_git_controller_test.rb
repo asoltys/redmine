@@ -50,10 +50,11 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
       assert_response :success
       assert_template 'browse'
       assert_not_nil assigns(:entries)
-      assert_equal 3, assigns(:entries).size
+      assert_equal 4, assigns(:entries).size
       assert assigns(:entries).detect {|e| e.name == 'images' && e.kind == 'dir'}
       assert assigns(:entries).detect {|e| e.name == 'sources' && e.kind == 'dir'}
       assert assigns(:entries).detect {|e| e.name == 'README' && e.kind == 'file'}
+      assert assigns(:entries).detect {|e| e.name == 'test.txt' && e.kind == 'file'}
     end
     
     def test_browse_directory
