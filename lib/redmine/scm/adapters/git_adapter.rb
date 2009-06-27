@@ -18,6 +18,24 @@
 require 'redmine/scm/adapters/abstract_adapter'
 require 'grit'
 
+module Grit
+  class Repo
+    def log(commit = 'master', path = nil, options = {})
+      default_options = {:pretty => "raw"}
+
+      if commit == 'all'
+        commit = 'master'
+        default_options.merge!(:all => true)
+      end
+
+      actual_options  = default_options.merge(options)
+      arg = path ? [commit, '--', path] : [commit]
+      commits = self.git.log(actual_options, *arg)
+      Commit.list_from_string(self, commits)
+    end
+  end
+end
+
 module Redmine
   module Scm
     module Adapters    
@@ -37,23 +55,23 @@ module Redmine
         end
         
         def entries(path=nil, identifier=nil)
-          path ||= ''
+          path = nil if path.empty?
           entries = Entries.new
           
           repo = Grit::Repo.new(url, :is_bare => true)
           
           if identifier.nil?
-            tree = repo.log.first.tree
+            tree = repo.log('all', path).first.tree
           else
-            tree = repo.log.select{|c| c.id == identifier}.first.tree 
+            tree = repo.log('all', path).select{|c| c.id == identifier}.first.tree 
           end
 
-          tree = tree / path unless path.empty?
+          tree = tree / path if path
 
           tree.contents.each do |file|
             files = []
-            file_path = path.empty? ? file.name : "#{path}/#{file.name}"
-            commit = repo.log('HEAD', file_path).first
+            file_path = path ? "#{path}/#{file.name}" : file.name
+            commit = repo.log('all', file_path).first
             commit.stats.files.each do |file_stats|
               files << {:action => file_action(file_stats), :path => file_stats[0]}
             end
@@ -82,8 +100,14 @@ module Redmine
         def revisions(path, identifier_from, identifier_to, options={})
           repo = Grit::Repo.new(url, :is_bare => true)
           revisions = Revisions.new
+          
+          if options[:limit].nil?
+            commits = repo.log('all')
+          else
+            commits = repo.log('all',nil,:n => options[:limit])
+          end
 
-          repo.log.each do |commit|
+          commits.each do |commit|
             files = []
             commit.stats.files.each do |file_stats|
               files << {:action => file_action(file_stats), :path => file_stats[0]}
