@@ -21,7 +21,7 @@ require 'grit'
 module Grit
   class Repo
     def log(commit = 'master', path = nil, options = {})
-      default_options = {:pretty => "raw"}
+      default_options = {:pretty => "raw", "no-merges" => true}
 
       if commit == 'all'
         commit = 'master'
@@ -32,6 +32,19 @@ module Grit
       arg = path ? [commit, '--', path] : [commit]
       commits = self.git.log(actual_options, *arg)
       Commit.list_from_string(self, commits)
+    end
+  end
+
+  class Diff
+    def action
+      return 'A' if new_file
+      return 'D' if deleted_file
+      return 'M'
+    end
+
+    def path
+      return a_path if a_path
+      return b_path if b_path
     end
   end
 end
@@ -46,6 +59,7 @@ module Redmine
         GIT_BIN = "git"
 
         def initialize(*args)
+          args[1] = args[0]
           super(*args)
           @repo = Grit::Repo.new(url, :is_bare => true)
         end
@@ -76,18 +90,14 @@ module Redmine
           tree.contents.each do |file|
             files = []
             file_path = path ? "#{path}/#{file.name}" : file.name
-            commit = repo.log('all', file_path).first
-            commit.stats.files.each do |file_stats|
-              files << {:action => file_action(file_stats), :path => file_stats[0]}
-            end
+            commit = repo.log('all', file_path, :n => 1).first
 
             rev = Revision.new({
               :identifier => commit.id,
               :scmid => commit.id,
               :author => "#{commit.author.name} <#{commit.author.email}>",
               :time => commit.committed_date,
-              :message => commit.message,
-              :paths => files
+              :message => commit.message
             })
 
             entries << Entry.new({
@@ -109,18 +119,13 @@ module Redmine
           commits ||= repo.log('all')
 
           commits.each do |commit|
-            files = []
-            commit.stats.files.each do |file_stats|
-              files << {:action => file_action(file_stats), :path => file_stats[0]}
-            end
-
             revisions << Revision.new({
               :identifier => commit.id,
               :scmid => commit.id,
               :author => "#{commit.author.name} <#{commit.author.email}>",
               :time => commit.committed_date,
               :message => commit.message,
-              :paths => files
+              :paths => commit.show.collect{|d| {:action => d.action, :path => d.path}}
             })
           end
 
@@ -174,17 +179,6 @@ module Redmine
           end
           return nil if $? && $?.exitstatus != 0
           cat
-        end
-
-        private
-       
-        # If it was 100% new lines, it's a new file
-        # If it was 100% removed lines, it's a deleted file
-        # Otherwise it's a modified file
-        def file_action(file_stats)
-          return 'A' if file_stats[1] == file_stats[3] 
-          return 'D' if file_stats[2] == file_stats[3]
-          return 'M'
         end
       end
     end

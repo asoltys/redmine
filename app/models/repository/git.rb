@@ -54,10 +54,10 @@ class Repository::Git < Repository
                                            :committer => revision.author, 
                                            :committed_on => revision.time,
                                            :comments => revision.message)
-              revision.paths.each do |change|
+              revision.paths.each do |file|
                 Change.create!(:changeset => changeset,
-                              :action => change[:action],
-                              :path => change[:path])
+                              :action => file[:action],
+                              :path => file[:path])
               end
             end
           end
