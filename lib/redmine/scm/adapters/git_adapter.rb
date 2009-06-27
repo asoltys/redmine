@@ -40,8 +40,15 @@ module Redmine
   module Scm
     module Adapters    
       class GitAdapter < AbstractAdapter
+        attr_accessor :repo
+
         # Git executable name
         GIT_BIN = "git"
+
+        def initialize(*args)
+          super(*args)
+          @repo = Grit::Repo.new(url, :is_bare => true)
+        end
 
         def info
           revs = revisions(url,nil,nil,{:limit => 1})
@@ -57,8 +64,6 @@ module Redmine
         def entries(path=nil, identifier=nil)
           path = nil if path.empty?
           entries = Entries.new
-          
-          repo = Grit::Repo.new(url, :is_bare => true)
           
           if identifier.nil?
             tree = repo.log('all', path).first.tree
@@ -98,14 +103,10 @@ module Redmine
         end
 
         def revisions(path, identifier_from, identifier_to, options={})
-          repo = Grit::Repo.new(url, :is_bare => true)
           revisions = Revisions.new
           
-          if options[:limit].nil?
-            commits = repo.log('all')
-          else
-            commits = repo.log('all',nil,:n => options[:limit])
-          end
+          commits = repo.log('all',nil,:n => options[:limit]) if options[:limit]
+          commits ||= repo.log('all')
 
           commits.each do |commit|
             files = []
