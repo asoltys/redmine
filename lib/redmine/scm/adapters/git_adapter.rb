@@ -82,7 +82,7 @@ module Redmine
           if identifier.nil?
             tree = repo.log('all', path).first.tree
           else
-            tree = repo.log('all', path).select{|c| c.id == identifier}.first.tree 
+            tree = repo.log('all', path).select{|c| c.id =~ /#{identifier}/}.first.tree 
           end
 
           tree = tree / path if path
