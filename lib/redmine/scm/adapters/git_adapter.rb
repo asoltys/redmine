@@ -52,14 +52,10 @@ module Redmine
         
         def entries(path=nil, identifier=nil)
           path = nil if path.empty?
+          identifier = 'master' if identifier.nil?
           entries = Entries.new
           
-          if identifier.nil?
-            tree = repo.log('all', path).first.tree
-          else
-            tree = repo.log('all', path).select{|c| c.id =~ /#{identifier}/}.first.tree 
-          end
-
+          tree = repo.log(identifier, path).first.tree 
           tree = tree / path if path
 
           tree.contents.each do |file|
@@ -89,9 +85,10 @@ module Redmine
 
         def revisions(path, identifier_from, identifier_to, options={})
           revisions = Revisions.new
+          path = 'all' if path.empty?
           
-          commits = repo.log('all',nil,:n => options[:limit]) if options[:limit]
-          commits ||= repo.log('all')
+          commits = repo.log(path,nil,:n => options[:limit]) if options[:limit]
+          commits ||= repo.log(path)
 
           commits.each do |commit|
             revisions << Revision.new({

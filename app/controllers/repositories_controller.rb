@@ -199,8 +199,6 @@ private
     render_404
   end
   
-  REV_PARAM_RE = %r{^[a-f0-9]*$}
-  
   def find_repository
     @project = Project.find(params[:id])
     @repository = @project.repository
@@ -209,7 +207,6 @@ private
     @path ||= ''
     @rev = params[:rev]
     @rev_to = params[:rev_to]
-    raise InvalidRevisionParam unless @rev.to_s.match(REV_PARAM_RE) && @rev.to_s.match(REV_PARAM_RE)
   rescue ActiveRecord::RecordNotFound
     render_404
   rescue InvalidRevisionParam
