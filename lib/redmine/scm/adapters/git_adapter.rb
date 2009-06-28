@@ -45,6 +45,10 @@ module Redmine
         rescue Errno::ENOENT => e
           return nil
         end
+
+        def branches
+          @repo.branches
+        end
         
         def entries(path=nil, identifier=nil)
           path = nil if path.empty?

@@ -65,4 +65,8 @@ class Repository::Git < Repository
       end
     end
   end
+
+  def branches
+    scm.branches
+  end
 end
