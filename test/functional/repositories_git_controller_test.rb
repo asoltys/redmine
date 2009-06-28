@@ -50,11 +50,13 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
       assert_response :success
       assert_template 'browse'
       assert_not_nil assigns(:entries)
-      assert_equal 4, assigns(:entries).size
+      assert_equal 6, assigns(:entries).size
       assert assigns(:entries).detect {|e| e.name == 'images' && e.kind == 'dir'}
       assert assigns(:entries).detect {|e| e.name == 'sources' && e.kind == 'dir'}
       assert assigns(:entries).detect {|e| e.name == 'README' && e.kind == 'file'}
-      assert assigns(:entries).detect {|e| e.name == 'test.txt' && e.kind == 'file'}
+      assert assigns(:entries).detect {|e| e.name == 'copied_README' && e.kind == 'file'}
+      assert assigns(:entries).detect {|e| e.name == 'new_file.txt' && e.kind == 'file'}
+      assert assigns(:entries).detect {|e| e.name == 'renamed_test.txt' && e.kind == 'file'}
     end
     
     def test_browse_directory
@@ -62,7 +64,7 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
       assert_response :success
       assert_template 'browse'
       assert_not_nil assigns(:entries)
-      assert_equal ['delete.png', 'edit.png'], assigns(:entries).collect(&:name)
+      assert_equal ['edit.png'], assigns(:entries).collect(&:name)
       entry = assigns(:entries).detect {|e| e.name == 'edit.png'}
       assert_not_nil entry
       assert_equal 'file', entry.kind
@@ -77,6 +79,21 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
       assert_equal ['delete.png'], assigns(:entries).collect(&:name)
     end
 
+=begin
+    Even with a rev param, this seems to render the list page rather than a single revision
+    assert_template 'revision' passes though...?
+
+    def test_view_revision
+      get :revisions, :id => 3, :rev => 'deff712f05a90d96edbd70facc47d944be5897e3'
+      assert_response :success
+      assert_template 'revision'
+      assert_tag :tag => 'h2', :child => "Revision #{assigns(:rev)[0,8]}"
+      assert_tag :tag => 'li', 
+        :attributes => {:class => /change-A/},
+        :child => { :tag => 'a', :child => 'new_file.txt' }
+    end
+=end
+
     def test_changes
       get :changes, :id => 3, :path => ['images', 'edit.png']
       assert_response :success
@@ -90,7 +107,7 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
       assert_template 'entry'
       # Line 19
       assert_tag :tag => 'th',
-                 :content => /10/,
+                 :content => /11/,
                  :attributes => { :class => /line-num/ },
                  :sibling => { :tag => 'td', :content => /WITHOUT ANY WARRANTY/ }
     end
@@ -128,14 +145,14 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
       assert_response :success
       assert_template 'annotate'
       # Line 23, changeset 2f9c0091
-      assert_tag :tag => 'th', :content => /23/,
+      assert_tag :tag => 'th', :content => /24/,
                  :sibling => { :tag => 'td', :child => { :tag => 'a', :content => /2f9c0091/ } },
                  :sibling => { :tag => 'td', :content => /jsmith/ },
                  :sibling => { :tag => 'td', :content => /watcher =/ }
     end
     
     def test_annotate_binary_file
-      get :annotate, :id => 3, :path => ['images', 'delete.png']
+      get :annotate, :id => 3, :path => ['images', 'edit.png']
       assert_response 500
       assert_tag :tag => 'div', :attributes => { :class => /error/ },
                                 :content => /can not be annotated/

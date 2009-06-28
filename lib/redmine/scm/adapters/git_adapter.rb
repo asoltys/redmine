@@ -18,36 +18,7 @@
 require 'redmine/scm/adapters/abstract_adapter'
 require 'grit'
 
-module Grit
-  class Repo
-    def log(commit = 'master', path = nil, options = {})
-      default_options = {:pretty => "raw", "no-merges" => true}
 
-      if commit == 'all'
-        commit = 'master'
-        default_options.merge!(:all => true)
-      end
-
-      actual_options  = default_options.merge(options)
-      arg = path ? [commit, '--', path] : [commit]
-      commits = self.git.log(actual_options, *arg)
-      Commit.list_from_string(self, commits)
-    end
-  end
-
-  class Diff
-    def action
-      return 'A' if new_file
-      return 'D' if deleted_file
-      return 'M'
-    end
-
-    def path
-      return a_path if a_path
-      return b_path if b_path
-    end
-  end
-end
 
 module Redmine
   module Scm
@@ -183,6 +154,35 @@ module Redmine
       end
     end
   end
-
 end
 
+module Grit
+  class Repo
+    def log(commit = 'master', path = nil, options = {})
+      default_options = {:pretty => "raw", "no-merges" => true}
+
+      if commit == 'all'
+        commit = 'master'
+        default_options.merge!(:all => true)
+      end
+
+      actual_options  = default_options.merge(options)
+      arg = path ? [commit, '--', path] : [commit]
+      commits = self.git.log(actual_options, *arg)
+      Commit.list_from_string(self, commits)
+    end
+  end
+
+  class Diff
+    def action
+      return 'A' if new_file
+      return 'D' if deleted_file
+      return 'M'
+    end
+
+    def path
+      return a_path if a_path
+      return b_path if b_path
+    end
+  end
+end
