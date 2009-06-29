@@ -1,21 +1,19 @@
-<%= link_to 'root', :action => 'browse', :id => @project, :path => '', :rev => @rev %>
-<% 
-dirs = path.split('/')
-if 'file' == kind
-    filename = dirs.pop
-end
-link_path = ''
-dirs.each do |dir|
-    next if dir.blank?
-    link_path << '/' unless link_path.empty?
-    link_path << "#{dir}" 
-    %>
-    / <%= link_to h(dir), :action => 'browse', :id => @project, :path => to_path_param(link_path), :rev => @rev %>
-<% end %>
-<% if filename %>
-    / <%= link_to h(filename), :action => 'changes', :id => @project, :path => to_path_param("#{link_path}/#{filename}"), :rev => @rev %>
-<% end %>
+<%= link_to l(:label_statistics), {:action => 'stats', :id => @project}, :class => 'icon icon-stats' %>
 
-<%= "@ #{revision}" if revision %>
+<% if !@entries.nil? && authorize_for('repositories', 'browse') -%>
+  <% form_tag({:action => 'show', :id => @project}, :method => :get, :id => 'revision_selector') do -%>
+    <!-- Branches Dropdown -->
+    <% if !@repository.branches.nil? -%>
+    |
+      <% content_for :header_tags do %>
+          <%= javascript_include_tag 'repository_navigation' %>
+      <% end %>
 
-<% html_title(with_leading_slash(path)) -%>
+      <%= l(:label_branch) %>: 
+      <%= select_tag :rev, options_for_select(@repository.branches.map{|b| b.name},@rev), :id => 'branch' %>
+    <% end -%>
+
+    | <%= l(:label_revision) %>: 
+    <%= text_field_tag 'rev', @rev, :size => 8 %>
+  <% end -%>
+<% end -%>

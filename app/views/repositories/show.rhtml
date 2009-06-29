@@ -1,21 +1,10 @@
-<% content_for :header_tags do %>
-    <%= javascript_include_tag 'repository_navigation' %>
-<% end %>
-<div class="contextual">
 <%= call_hook(:view_repositories_show_contextual, { :repository => @repository, :project => @project }) %>
-<%= link_to l(:label_statistics), {:action => 'stats', :id => @project}, :class => 'icon icon-stats' %>
 
-<% if !@entries.nil? && authorize_for('repositories', 'browse') -%>
-<% form_tag({:action => 'browse', :id => @project}, :method => :get) do -%>
-| <%= l(:label_revision) %>: <%= text_field_tag 'rev', @rev, :size => 8 %>
-<% if !@repository.branches.nil? -%>
-| <%= l(:label_branch) %>: <%= select_tag :rev, options_for_select(@repository.branches.map{|b| b.name},@rev), :id => 'branch' %>
-<% end -%>
-<% end -%>
-<% end -%>
+<div class="contextual">
+  <%= render :partial => 'navigation' %>
 </div>
 
-<h2><%= l(:label_repository) %> (<%= @repository.scm_name %>)</h2>
+<h2><%= render :partial => 'breadcrumbs', :locals => { :path => @path, :kind => 'dir', :revision => @rev } %></h2>
 
 <% if !@entries.nil? && authorize_for('repositories', 'browse') %>
 <%= render :partial => 'dir_list' %>

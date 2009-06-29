@@ -64,26 +64,21 @@ class RepositoriesController < ApplicationController
     redirect_to :controller => 'projects', :action => 'settings', :id => @project, :tab => 'repository'
   end
   
-  def show
-    # check if new revisions have been committed in the repository
-    @repository.fetch_changesets if Setting.autofetch_changesets?
-    # root entries
-    @entries = @repository.entries('', @rev)    
-    # latest changesets
+  def show 
+    @repository.fetch_changesets if Setting.autofetch_changesets? && @path.empty?
     @changesets = @repository.changesets.find(:all, :limit => 10, :order => "committed_on DESC")
-    show_error_not_found unless @entries || @changesets.any?
-  end
-  
-  def browse
+    @changeset = @changesets.first
+
     @entries = @repository.entries(@path, @rev)
     if request.xhr?
       @entries ? render(:partial => 'dir_list_content') : render(:nothing => true)
     else
       show_error_not_found and return unless @entries
       @properties = @repository.properties(@path, @rev)
-      render :action => 'browse'
+      render :action => 'show'
     end
   end
+  alias_method :browse, :show
   
   def changes
     @entry = @repository.entry(@path, @rev)
@@ -205,7 +200,7 @@ private
     render_404 and return false unless @repository
     @path = params[:path].join('/') unless params[:path].nil?
     @path ||= ''
-    @rev = params[:rev]
+    @rev = params[:rev].nil? || params[:rev].empty? ? nil : params[:rev]
     @rev_to = params[:rev_to]
   rescue ActiveRecord::RecordNotFound
     render_404
