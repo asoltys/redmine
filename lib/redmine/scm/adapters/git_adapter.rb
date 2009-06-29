@@ -36,7 +36,7 @@ module Redmine
         end
 
         def info
-          revs = revisions(url,nil,nil,{:limit => 1})
+          revs = revisions('',nil,nil,{:limit => 1})
           if revs && revs.any?
             Info.new(:root_url => url, :lastrev => revs.first)
           else

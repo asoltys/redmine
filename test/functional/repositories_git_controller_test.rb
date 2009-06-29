@@ -46,9 +46,9 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
     end
     
     def test_browse_root
-      get :browse, :id => 3
+      get :show, :id => 3
       assert_response :success
-      assert_template 'browse'
+      assert_template 'show'
       assert_not_nil assigns(:entries)
       assert_equal 6, assigns(:entries).size
       assert assigns(:entries).detect {|e| e.name == 'images' && e.kind == 'dir'}
@@ -60,9 +60,9 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
     end
 
     def test_browse_branch
-      get :browse, :id => 3, :rev => 'test_branch'
+      get :show, :id => 3, :rev => 'test_branch'
       assert_response :success
-      assert_template 'browse'
+      assert_template 'show'
       assert_not_nil assigns(:entries)
       assert_equal 4, assigns(:entries).size
       assert assigns(:entries).detect {|e| e.name == 'images' && e.kind == 'dir'}
@@ -72,9 +72,9 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
     end
 
     def test_browse_directory
-      get :browse, :id => 3, :path => ['images']
+      get :show, :id => 3, :path => ['images']
       assert_response :success
-      assert_template 'browse'
+      assert_template 'show'
       assert_not_nil assigns(:entries)
       assert_equal ['edit.png'], assigns(:entries).collect(&:name)
       entry = assigns(:entries).detect {|e| e.name == 'edit.png'}
@@ -84,9 +84,9 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
     end
     
     def test_browse_at_given_revision
-      get :browse, :id => 3, :path => ['images'], :rev => '7234cb2750b63f47bff735edc50a1c0a433c2518'
+      get :show, :id => 3, :path => ['images'], :rev => '7234cb2750b63f47bff735edc50a1c0a433c2518'
       assert_response :success
-      assert_template 'browse'
+      assert_template 'show'
       assert_not_nil assigns(:entries)
       assert_equal ['delete.png'], assigns(:entries).collect(&:name)
     end
@@ -134,7 +134,7 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
     def test_directory_entry
       get :entry, :id => 3, :path => ['sources']
       assert_response :success
-      assert_template 'browse'
+      assert_template 'show'
       assert_not_nil assigns(:entry)
       assert_equal 'sources', assigns(:entry).name
     end

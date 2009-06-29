@@ -120,7 +120,7 @@ class RepositoriesControllerTest < Test::Unit::TestCase
   def test_browse_routing
     assert_routing(
       {:method => :get, :path => '/projects/restmine/repository/browse/path/to/dir'},
-      :controller => 'repositories', :action => 'show', :id => 'restmine', :path => %w[path to dir]
+      :controller => 'repositories', :action => 'browse', :id => 'restmine', :path => %w[path to dir]
     )
   end
   
