@@ -52,7 +52,8 @@ module Redmine
         
         def entries(path=nil, identifier=nil)
           path = nil if path.empty?
-          identifier = 'master' if identifier.nil?
+          identifier = repo.default_branch if identifier.nil? 
+
           entries = Entries.new
           
           tree = repo.log(identifier, path).first.tree 
@@ -171,6 +172,14 @@ module Grit
       arg = path ? [commit, '--', path] : [commit]
       commits = self.git.log(actual_options, *arg)
       Commit.list_from_string(self, commits)
+    end
+
+    def default_branch
+      if branches.map{|h| h.name}.include?('master') 
+        'master'
+      else
+        branches.first.name
+      end
     end
   end
 
