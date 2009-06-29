@@ -62,6 +62,10 @@ class Repository < ActiveRecord::Base
   def entries(path=nil, identifier=nil)
     scm.entries(path, identifier)
   end
+
+  def branches
+    scm.branches
+  end
   
   def properties(path, identifier=nil)
     scm.properties(path, identifier)

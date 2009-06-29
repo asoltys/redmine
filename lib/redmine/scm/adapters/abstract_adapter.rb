@@ -100,6 +100,10 @@ module Redmine
         def entries(path=nil, identifier=nil)
           return nil
         end
+
+        def branches
+          return nil
+        end
         
         def properties(path, identifier=nil)
           return nil
