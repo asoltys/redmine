@@ -4,7 +4,7 @@
 
 <% if !@entries.nil? && authorize_for('repositories', 'browse') -%>
 <% form_tag({:action => 'browse', :id => @project}, :method => :get) do -%>
-| <%= l(:label_revision) %>: <%= text_field_tag 'rev', @rev, :size => 5 %>
+| <%= l(:label_revision) %>: <%= text_field_tag 'rev', @rev, :size => 8 %>
 <% end -%>
 <% end -%>
 </div>

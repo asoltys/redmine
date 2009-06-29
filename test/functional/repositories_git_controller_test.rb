@@ -60,7 +60,7 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
     end
 
     def test_browse_branch
-      get :browse, :id => 3, :rev => 'fba357b886984ee71185ad2065e65fc0417d9b92'
+      get :browse, :id => 3, :rev => 'test_branch'
       assert_response :success
       assert_template 'browse'
       assert_not_nil assigns(:entries)
@@ -70,7 +70,7 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
       assert assigns(:entries).detect {|e| e.name == 'README' && e.kind == 'file'}
       assert assigns(:entries).detect {|e| e.name == 'test.txt' && e.kind == 'file'}
     end
-    
+
     def test_browse_directory
       get :browse, :id => 3, :path => ['images']
       assert_response :success
