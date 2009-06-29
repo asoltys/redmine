@@ -37,31 +37,19 @@ class Repository::Git < Repository
   end
 
   def fetch_changesets
-    scm_info = scm.info
-    if scm_info
-      # latest revision found in database
-      db_revision = latest_changeset ? latest_changeset.revision : nil
-      # latest revision in the repository
-      scm_revision = scm_info.lastrev.scmid
+    # latest revision found in database
+    db_revision = latest_changeset ? latest_changeset.revision : nil
 
-      unless changesets.find_by_scmid(scm_revision)
-        scm.revisions('', db_revision, nil, :reverse => true).each do |revision|
-          if changesets.find_by_scmid(revision.scmid.to_s).nil?
-            transaction do
-              changeset = Changeset.create!(:repository => self,
-                                           :revision => revision.identifier,
-                                           :scmid => revision.scmid,
-                                           :committer => revision.author, 
-                                           :committed_on => revision.time,
-                                           :comments => revision.message)
-              revision.paths.each do |file|
-                Change.create!(:changeset => changeset,
-                              :action => file[:action],
-                              :path => file[:path])
-              end
-            end
-          end
-        end
+    # latest revision in the repository
+    scm_revision = scm.info.lastrev.scmid
+
+    if db_revision.nil?
+      scm.initialize_database(self)
+    end
+
+    unless changesets.find_by_scmid(scm_revision)
+      scm.revisions('', db_revision, nil, :reverse => true).each do |revision|
+        revision.save(self)
       end
     end
   end

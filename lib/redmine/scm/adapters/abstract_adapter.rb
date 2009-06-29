@@ -264,6 +264,7 @@ module Redmine
       
       class Revision
         attr_accessor :identifier, :scmid, :name, :author, :time, :message, :paths, :revision, :branch
+
         def initialize(attributes={})
           self.identifier = attributes[:identifier]
           self.scmid = attributes[:scmid]
@@ -275,7 +276,25 @@ module Redmine
           self.revision = attributes[:revision]
           self.branch = attributes[:branch]
         end
-    
+
+        def save(repo)
+          if repo.changesets.find_by_scmid(scmid.to_s).nil?
+            changeset = Changeset.create!(
+              :repository => repo,
+              :revision => identifier,
+              :scmid => scmid,
+              :committer => author, 
+              :committed_on => time,
+              :comments => message)
+
+            paths.each do |file|
+              Change.create!(
+                :changeset => changeset,
+                :action => file[:action],
+                :path => file[:path])
+            end   
+          end
+        end
       end
         
       class Annotate

@@ -91,20 +91,19 @@ module Redmine
           commits = repo.log(path,nil,:n => options[:limit]) if options[:limit]
           commits ||= repo.log(path)
 
-          commits.each do |commit|
-            revisions << Revision.new({
-              :identifier => commit.id,
-              :scmid => commit.id,
-              :author => "#{commit.author.name} <#{commit.author.email}>",
-              :time => commit.committed_date,
-              :message => commit.message,
-              :paths => commit.show.collect{|d| {:action => d.action, :path => d.path}}
-            })
-          end
-
-          return revisions
+          revisions = commits.collect{|c| c.to_revision}
         end
-        
+
+        def initialize_database(repository)
+          repo.log('all').each do |c| 
+            begin
+              c.to_revision.save(repository)
+            rescue
+              logger.error 'Encountered Nasty Revision'
+            end
+          end
+        end
+
         def diff(path, identifier_from, identifier_to=nil)
           path ||= ''
           if !identifier_to
@@ -193,6 +192,19 @@ module Grit
     def path
       return a_path if a_path
       return b_path if b_path
+    end
+  end
+
+  class Commit
+    def to_revision
+      Redmine::Scm::Adapters::Revision.new({
+        :identifier => id,
+        :scmid => id,
+        :author => "#{author.name} <#{author.email}>",
+        :time => committed_date,
+        :message => message,
+        :paths => show.collect{|d| {:action => d.action, :path => d.path}}
+      })
     end
   end
 end
