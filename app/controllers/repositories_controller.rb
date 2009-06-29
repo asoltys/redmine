@@ -67,7 +67,6 @@ class RepositoriesController < ApplicationController
   def show 
     @repository.fetch_changesets if Setting.autofetch_changesets? && @path.empty?
     @changesets = @repository.changesets.find(:all, :limit => 10, :order => "committed_on DESC")
-    @changeset = @changesets.first
 
     @entries = @repository.entries(@path, @rev)
     if request.xhr?
@@ -78,6 +77,7 @@ class RepositoriesController < ApplicationController
       render :action => 'show'
     end
   end
+
   alias_method :browse, :show
   
   def changes
