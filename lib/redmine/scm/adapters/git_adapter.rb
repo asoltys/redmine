@@ -52,7 +52,7 @@ module Redmine
 
           entries = Entries.new
           
-          tree = repo.log(identifier, path).first.tree 
+          tree = repo.log(identifier, path, :n => 1).first.tree 
           tree = tree / path if path
 
           tree.contents.each do |file|
@@ -73,7 +73,7 @@ module Redmine
 
         def revisions(path, identifier_from, identifier_to, options={})
           revisions = Revisions.new
-          cmd = "#{GIT_BIN} --git-dir #{target('')} log --all --raw --date=iso --pretty=fuller"
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log -M -C --all --raw --date=iso --pretty=fuller --no-merges"
           cmd << " --reverse" if options[:reverse]
           cmd << " -n #{options[:limit].to_i} " if (!options.nil?) && options[:limit]
           cmd << " #{shell_quote(identifier_from + '..')} " if identifier_from
