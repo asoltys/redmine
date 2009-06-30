@@ -66,6 +66,10 @@ class Repository < ActiveRecord::Base
   def branches
     scm.branches
   end
+
+  def default_branch
+    scm.default_branch
+  end
   
   def properties(path, identifier=nil)
     scm.properties(path, identifier)
@@ -96,11 +100,15 @@ class Repository < ActiveRecord::Base
   def latest_changeset
     @latest_changeset ||= changesets.find(:first)
   end
+
+  def latest_changesets(rev, path)
+    @latest_changesets ||= changesets.find(:all, :limit => 10, :order => "committed_on DESC")
+  end
     
   def scan_changesets_for_issue_ids
     self.changesets.each(&:scan_comment_for_issue_ids)
   end
-  
+
   # Returns an array of committers usernames and associated user_id
   def committers
     @committers ||= Changeset.connection.select_rows("SELECT DISTINCT committer, user_id FROM #{Changeset.table_name} WHERE repository_id = #{id}")

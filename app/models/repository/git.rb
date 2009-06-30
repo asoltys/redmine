@@ -43,10 +43,6 @@ class Repository::Git < Repository
     # latest revision in the repository
     scm_revision = scm.info.lastrev.scmid
 
-    if db_revision.nil?
-      scm.initialize_database(self)
-    end
-
     unless changesets.find_by_scmid(scm_revision)
       scm.revisions('', db_revision, nil, :reverse => true).each do |revision|
         revision.save(self)
@@ -56,5 +52,13 @@ class Repository::Git < Repository
 
   def branches
     scm.branches
+  end
+
+  def latest_changesets(path,rev)
+    @latest_changesets ||= changesets.find(
+      :all, 
+      :conditions => ["scmid IN (?)", scm.repo.log(rev,path, :n => 10).collect{|c| c.id}],
+      :order => 'committed_on DESC'
+    )
   end
 end

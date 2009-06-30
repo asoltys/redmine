@@ -66,13 +66,13 @@ class RepositoriesController < ApplicationController
   
   def show 
     @repository.fetch_changesets if Setting.autofetch_changesets? && @path.empty?
-    @changesets = @repository.changesets.find(:all, :limit => 10, :order => "committed_on DESC")
 
     @entries = @repository.entries(@path, @rev)
     if request.xhr?
       @entries ? render(:partial => 'dir_list_content') : render(:nothing => true)
     else
       show_error_not_found and return unless @entries
+      @changesets = @repository.latest_changesets(@path, @branch)
       @properties = @repository.properties(@path, @rev)
       render :action => 'show'
     end
@@ -201,6 +201,7 @@ private
     @path = params[:path].join('/') unless params[:path].nil?
     @path ||= ''
     @rev = params[:rev].nil? || params[:rev].empty? ? nil : params[:rev]
+    @branch = @rev.nil? ? @repository.default_branch : @rev
     @rev_to = params[:rev_to]
   rescue ActiveRecord::RecordNotFound
     render_404

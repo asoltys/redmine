@@ -104,6 +104,10 @@ module Redmine
         def branches
           return nil
         end
+
+        def default_branch
+          return nil
+        end
         
         def properties(path, identifier=nil)
           return nil

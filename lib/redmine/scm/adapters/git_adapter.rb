@@ -36,23 +36,19 @@ module Redmine
         end
 
         def info
-          revs = revisions('',nil,nil,{:limit => 1})
-          if revs && revs.any?
-            Info.new(:root_url => url, :lastrev => revs.first)
-          else
-            nil
-          end
-        rescue Errno::ENOENT => e
-          return nil
+          Info.new(:root_url => url, :lastrev => @repo.log('all', nil, :n => 1).first.to_revision)
         end
 
         def branches
           @repo.branches
         end
+
+        def default_branch
+          @repo.default_branch
+        end
         
         def entries(path=nil, identifier=nil)
           path = nil if path.empty?
-          identifier = repo.default_branch if identifier.nil? 
 
           entries = Entries.new
           
@@ -60,24 +56,15 @@ module Redmine
           tree = tree / path if path
 
           tree.contents.each do |file|
-            files = []
             file_path = path ? "#{path}/#{file.name}" : file.name
-            commit = repo.log('all', file_path, :n => 1).first
-
-            rev = Revision.new({
-              :identifier => commit.id,
-              :scmid => commit.id,
-              :author => "#{commit.author.name} <#{commit.author.email}>",
-              :time => commit.committed_date,
-              :message => commit.message
-            })
+            commit = repo.log(identifier, file_path, :n => 1).first
 
             entries << Entry.new({
               :name => file.name,
               :path => file_path,
               :kind => file.class == Grit::Blob ? 'file' : 'dir',
               :size => file.respond_to?('size') ? file.size : nil,
-              :lastrev => rev
+              :lastrev => commit.to_revision
             })
           end
 
@@ -86,22 +73,81 @@ module Redmine
 
         def revisions(path, identifier_from, identifier_to, options={})
           revisions = Revisions.new
-          path = 'all' if path.empty?
-          
-          commits = repo.log(path,nil,:n => options[:limit]) if options[:limit]
-          commits ||= repo.log(path)
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log --all --raw --date=iso --pretty=fuller"
+          cmd << " --reverse" if options[:reverse]
+          cmd << " -n #{options[:limit].to_i} " if (!options.nil?) && options[:limit]
+          cmd << " #{shell_quote(identifier_from + '..')} " if identifier_from
+          cmd << " #{shell_quote identifier_to} " if identifier_to
+          shellout(cmd) do |io|
+            files=[]
+            changeset = {}
+            parsing_descr = 0  #0: not parsing desc or files, 1: parsing desc, 2: parsing files
+            revno = 1
 
-          revisions = commits.collect{|c| c.to_revision}
-        end
+            io.each_line do |line|
+              if line =~ /^commit ([0-9a-f]{40})$/
+                key = "commit"
+                value = $1
+                if (parsing_descr == 1 || parsing_descr == 2)
+                  parsing_descr = 0
+                  revision = Revision.new({:identifier => changeset[:commit],
+                                           :scmid => changeset[:commit],
+                                           :author => changeset[:author],
+                                           :time => Time.parse(changeset[:date]),
+                                           :message => changeset[:description],
+                                           :paths => files
+                                          })
+                  if block_given?
+                    yield revision
+                  else
+                    revisions << revision
+                  end
+                  changeset = {}
+                  files = []
+                  revno = revno + 1
+                end
+                changeset[:commit] = $1
+              elsif (parsing_descr == 0) && line =~ /^(\w+):\s*(.*)$/
+                key = $1
+                value = $2
+                if key == "Author"
+                  changeset[:author] = value
+                elsif key == "CommitDate"
+                  changeset[:date] = value
+                end
+              elsif (parsing_descr == 0) && line.chomp.to_s == ""
+                parsing_descr = 1
+                changeset[:description] = ""
+              elsif (parsing_descr == 1 || parsing_descr == 2) && line =~ /^:\d+\s+\d+\s+[0-9a-f.]+\s+[0-9a-f.]+\s+(\w)\s+(.+)$/
+                parsing_descr = 2
+                fileaction = $1
+                filepath = $2
+                files << {:action => fileaction, :path => filepath}
+              elsif (parsing_descr == 1) && line.chomp.to_s == ""
+                parsing_descr = 2
+              elsif (parsing_descr == 1)
+                changeset[:description] << line[4..-1]
+              end
+            end 
 
-        def initialize_database(repository)
-          repo.log('all').each do |c| 
-            begin
-              c.to_revision.save(repository)
-            rescue
-              logger.error 'Encountered Nasty Revision'
+            if changeset[:commit]
+              revision = Revision.new({:identifier => changeset[:commit],
+                                       :scmid => changeset[:commit],
+                                       :author => changeset[:author],
+                                       :time => Time.parse(changeset[:date]),
+                                       :message => changeset[:description],
+                                       :paths => files
+                                      })
+              if block_given?
+                yield revision
+              else
+                revisions << revision
+              end
             end
           end
+
+          return nil if $? && $?.exitstatus != 0
+          revisions
         end
 
         def diff(path, identifier_from, identifier_to=nil)
@@ -159,11 +205,12 @@ end
 
 module Grit
   class Repo
-    def log(commit = 'master', path = nil, options = {})
+    def log(commit = 'all', path = nil, options = {})
       default_options = {:pretty => "raw", "no-merges" => true}
+      commit = default_branch if commit.nil?
 
       if commit == 'all'
-        commit = 'master'
+        commit = default_branch 
         default_options.merge!(:all => true)
       end
 
@@ -202,8 +249,7 @@ module Grit
         :scmid => id,
         :author => "#{author.name} <#{author.email}>",
         :time => committed_date,
-        :message => message,
-        :paths => show.collect{|d| {:action => d.action, :path => d.path}}
+        :message => message
       })
     end
   end
