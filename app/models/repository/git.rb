@@ -41,9 +41,13 @@ class Repository::Git < Repository
     db_revision = latest_changeset ? latest_changeset.revision : nil
 
     # latest revision in the repository
-    scm_revision = scm.info.lastrev.scmid
+    if scm.info.nil? || scm.info.lastrev.nil?
+      scm_revision = nil
+    else
+      scm_revision = scm.info.lastrev.scmid 
+    end
 
-    unless changesets.find_by_scmid(scm_revision)
+    unless scm_revision.nil? || changesets.find_by_scmid(scm_revision)
       scm.revisions('', db_revision, nil, :reverse => true).each do |revision|
         revision.save(self)
       end

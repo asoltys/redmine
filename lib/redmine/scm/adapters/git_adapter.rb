@@ -32,11 +32,20 @@ module Redmine
         def initialize(*args)
           args[1] = args[0]
           super(*args)
-          @repo = Grit::Repo.new(url, :is_bare => true)
+
+          begin
+            @repo = Grit::Repo.new(url, :is_bare => true)
+          rescue
+            Rails::logger.error "Repository could not be created"
+          end
         end
 
         def info
-          Info.new(:root_url => url, :lastrev => @repo.log('all', nil, :n => 1).first.to_revision)
+          begin
+            Info.new(:root_url => url, :lastrev => @repo.log('all', nil, :n => 1).first.to_revision)
+          rescue
+            nil
+          end
         end
 
         def branches
@@ -44,10 +53,15 @@ module Redmine
         end
 
         def default_branch
-          @repo.default_branch
+          begin
+            @repo.default_branch
+          rescue
+            nil
+          end
         end
         
         def entries(path=nil, identifier=nil)
+          return nil if repo.nil?
           path = nil if path.empty?
 
           entries = Entries.new
