@@ -15,11 +15,6 @@ class GitAdapterTest < Test::Unit::TestCase
     def test_getting_all_revisions
       assert_equal 11, @adapter.revisions('',nil,nil).length
     end
-
-    def test_getting_branch_revisions
-      assert_equal 11, @adapter.revisions('master',nil,nil).length
-      assert_equal 8, @adapter.revisions('test_branch',nil,nil).length
-    end
   else
     puts "Git test repository NOT FOUND. Skipping unit tests !!!"
     def test_fake; assert true end
