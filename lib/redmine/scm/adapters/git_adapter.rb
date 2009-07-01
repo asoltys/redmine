@@ -49,7 +49,7 @@ module Redmine
         end
 
         def branches
-          @repo.branches
+          @repo.branches.sort{|x,y| x.name <=> y.name}
         end
 
         def default_branch
