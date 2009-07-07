@@ -10,7 +10,7 @@
       <% end %>
 
       <%= l(:label_branch) %>: 
-      <%= select_tag :rev, options_for_select(@repository.branches.map{|b| b.name},@branch), :id => 'branch' %>
+      <%= select_tag :rev, options_for_select(@repository.branches,@branch), :id => 'branch' %>
     <% end -%>
 
     | <%= l(:label_revision) %>: 

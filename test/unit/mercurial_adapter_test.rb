@@ -32,6 +32,16 @@ begin
         test_template_path_for(v, template)
       end
     end
+
+    def test_branches
+      adapter = Redmine::Scm::Adapters::MercurialAdapter.new(REPOSITORY_PATH)
+      assert_equal ['default','test_branch'], adapter.branches
+    end
+    
+    def test_default_branch
+      adapter = Redmine::Scm::Adapters::MercurialAdapter.new(REPOSITORY_PATH)
+      assert_equal 'default', adapter.default_branch
+    end
     
     private
     

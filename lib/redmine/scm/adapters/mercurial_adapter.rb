@@ -75,6 +75,21 @@ module Redmine
         rescue CommandFailed
           return nil
         end
+
+        def branches
+          branches = []
+          cmd = "#{HG_BIN} -R #{target('')} --cwd #{target('')} branches"
+          shellout(cmd) do |io|
+            io.each_line do |line|
+              branches << line.chomp.split.first
+            end
+          end
+          branches.sort!
+        end
+
+        def default_branch
+          'default'
+        end
         
         def entries(path=nil, identifier=nil)
           path ||= ''
