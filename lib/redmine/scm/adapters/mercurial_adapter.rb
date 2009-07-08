@@ -123,6 +123,8 @@ module Redmine
           cmd = "cd #{target('')} && #{HG_BIN} --debug --encoding utf8 log -C --style #{shell_quote self.class.template_path}"
           if identifier_from && identifier_to
             cmd << " -r #{identifier_from.to_i}:#{identifier_to.to_i}"
+          elsif identifier_from.is_a? Integer
+            cmd << " -r #{identifier_from}:"
           elsif identifier_from
             cmd << " -b #{identifier_from}"
           end
