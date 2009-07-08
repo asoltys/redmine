@@ -58,6 +58,10 @@ class Repository::Git < Repository
     scm.branches
   end
 
+  def tags
+    scm.tags
+  end
+
   def latest_changesets(path,rev)
     @latest_changesets ||= changesets.find(
       :all, 

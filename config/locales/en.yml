@@ -544,6 +544,7 @@ en:
   label_modification: "{{count}} change"
   label_modification_plural: "{{count}} changes"
   label_branch: Branch
+  label_tag: Tag 
   label_revision: Revision
   label_revision_plural: Revisions
   label_associated_revisions: Associated revisions

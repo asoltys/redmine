@@ -67,6 +67,10 @@ class Repository < ActiveRecord::Base
     scm.branches
   end
 
+  def tags
+    scm.tags
+  end
+
   def default_branch
     scm.default_branch
   end

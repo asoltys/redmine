@@ -13,7 +13,21 @@ Event.observe(window,'load',function() {
   */
   $('branch').observe('change',function(e) {
     $('rev').disable();
+    $('tag').disable();
     e.element().parentNode.submit();
+    $('rev').enable();
+    $('tag').enable();
+  })
+
+  /* 
+  Temporarily disable the revision box if the tag drop-down
+  is changed since both fields are named 'rev'
+  */
+  $('tag').observe('change',function(e) {
+    $('branch').disable();
+    $('rev').disable();
+    e.element().parentNode.submit();
+    $('branch').enable();
     $('rev').enable();
   })
 
@@ -24,8 +38,10 @@ Event.observe(window,'load',function() {
   $('rev').observe('keydown',function(e) {
     if (e.keyCode == 13) {
       $('branch').disable();
+      $('tag').disable();
       e.element().parentNode.submit();
       $('branch').enable();
+      $('tag').enable();
     }
   })
 })

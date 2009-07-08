@@ -105,6 +105,10 @@ module Redmine
           return nil
         end
 
+        def tags 
+          return nil
+        end
+
         def default_branch
           return nil
         end

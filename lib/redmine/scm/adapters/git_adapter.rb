@@ -52,6 +52,10 @@ module Redmine
           @repo.branches.collect{|b| b.name}.sort!
         end
 
+        def tags 
+          @repo.tags.collect{|t| t.name}.sort!
+        end
+
         def default_branch
           begin
             @repo.default_branch
