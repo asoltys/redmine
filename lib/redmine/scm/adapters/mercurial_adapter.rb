@@ -134,10 +134,10 @@ module Redmine
           cmd = "#{HG_BIN} --debug --encoding utf8 --cwd #{target('')} log -C --style #{shell_quote self.class.template_path}"
           if identifier_from && identifier_to
             cmd << " -r #{identifier_from.to_i}:#{identifier_to.to_i}"
-          elsif identifier_from.is_a? Integer
-            cmd << " -r #{identifier_from}:"
-          elsif identifier_from
+          elsif branches.include? identifier_from
             cmd << " -b #{identifier_from}"
+          elsif identifier_from
+            cmd << " -r #{identifier_from}:"
           end
           cmd << " --limit #{options[:limit].to_i}" if options[:limit]
           cmd << " #{path}" if path

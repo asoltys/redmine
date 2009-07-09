@@ -49,10 +49,12 @@ module Redmine
         end
 
         def branches
+          return nil if @repo.branches.length == 0
           @repo.branches.collect{|b| b.name}.sort!
         end
 
         def tags 
+          return nil if @repo.tags.length == 0
           @repo.tags.collect{|t| t.name}.sort!
         end
 
