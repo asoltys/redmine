@@ -67,33 +67,57 @@ module Redmine
         end
         
         def entries(path=nil, identifier=nil)
-          return nil if repo.nil?
-          path = nil if path.empty?
-
+          path ||= ''
           entries = Entries.new
-          
-          tree = repo.log(identifier, path, :n => 1).first.tree 
-          tree = tree / path if path
+          cmd = "#{GIT_BIN} --git-dir #{target('')} ls-tree -l "
+          cmd << shell_quote("HEAD:" + path) if identifier.nil?
+          cmd << shell_quote(identifier + ":" + path) if identifier
+          shellout(cmd)  do |io|
+            io.each_line do |line|
+              e = line.chomp.to_s
+              if e =~ /^\d+\s+(\w+)\s+([0-9a-f]{40})\s+([0-9-]+)\s+(.+)$/
+                type = $1
+                sha = $2
+                size = $3
+                name = $4
+                full_path = path.empty? ? name : "#{path}/#{name}"
+                entries << Entry.new({:name => name,
+                 :path => full_path,
+                 :kind => (type == "tree") ? 'dir' : 'file',
+                 :size => (type == "tree") ? nil : size,
+                 :lastrev => lastrev(full_path)
+                }) unless entries.detect{|entry| entry.name == name}
+              end
+            end
+          end
+          return nil if $? && $?.exitstatus != 0
+          entries.sort_by_name
+        end
 
-          tree.contents.each do |file|
-            file_path = path ? "#{path}/#{file.name}" : file.name
-            commit = repo.log(identifier, file_path, :n => 1).first
+        def lastrev(path)
+          return nil if path.nil?
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log --pretty=fuller --no-merges "
+          cmd <<  "-- #{path} " unless path.empty?
+          shellout(cmd) do |io|
+            id = io.gets.split[1]
+            author = io.gets.match('Author:\s+(.*)$')[1]
+            2.times { io.gets }
+            time = io.gets.match('CommitDate:\s+(.*)$')[1]
 
-            entries << Entry.new({
-              :name => file.name,
-              :path => file_path,
-              :kind => file.class == Grit::Blob ? 'file' : 'dir',
-              :size => file.respond_to?('size') ? file.size : nil,
-              :lastrev => commit.to_revision
+            Revision.new({
+              :identifier => id,
+              :scmid => id,
+              :author => author, 
+              :time => time,
+              :message => nil, 
+              :paths => nil 
             })
           end
-
-          entries.sort_by_name
         end
 
         def revisions(path, identifier_from, identifier_to, options={})
           revisions = Revisions.new
-          cmd = "#{GIT_BIN} --git-dir #{target('')} log -M -C --all --raw --date=iso --pretty=fuller --no-merges"
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log -M -C --all --raw --date=iso --pretty=fuller"
           cmd << " --reverse" if options[:reverse]
           cmd << " -n #{options[:limit].to_i} " if (!options.nil?) && options[:limit]
           cmd << " #{shell_quote(identifier_from + '..')} " if identifier_from
