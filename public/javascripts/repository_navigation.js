@@ -14,7 +14,7 @@ Event.observe(window,'load',function() {
   $$('#branch,#tag').each(function(e) {
     e.observe('change',function(e) {
       $('rev').setValue(e.element().getValue());
-      e.element().disable();
+      $$('#branch,#tag').invoke('disable');
       e.element().parentNode.submit();
     });
   });
