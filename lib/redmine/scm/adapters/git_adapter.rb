@@ -49,13 +49,26 @@ module Redmine
         end
 
         def branches
-          return nil if @repo.branches.length == 0
-          @repo.branches.collect{|b| b.name}.sort!
+          branches = []
+          cmd = "cd #{target('')} && #{GIT_BIN} branch"
+          shellout(cmd) do |io|
+            io.each_line do |line|
+              branches << line.match('\s*\*?\s*(.*)$')[1]
+            end
+          end
+          branches.sort!
         end
 
-        def tags 
-          return nil if @repo.tags.length == 0
-          @repo.tags.collect{|t| t.name}.sort!
+        def default_branch
+          'default'
+        end
+
+        def tags
+          tags = []
+          cmd = "cd #{target('')} && #{GIT_BIN} tag"
+          shellout(cmd) do |io|
+            io.readlines.sort!
+          end
         end
 
         def default_branch
@@ -134,13 +147,14 @@ module Redmine
                 value = $1
                 if (parsing_descr == 1 || parsing_descr == 2)
                   parsing_descr = 0
-                  revision = Revision.new({:identifier => changeset[:commit],
-                                           :scmid => changeset[:commit],
-                                           :author => changeset[:author],
-                                           :time => Time.parse(changeset[:date]),
-                                           :message => changeset[:description],
-                                           :paths => files
-                                          })
+                  revision = Revision.new({
+                    :identifier => changeset[:commit],
+                    :scmid => changeset[:commit],
+                    :author => changeset[:author],
+                    :time => Time.parse(changeset[:date]),
+                    :message => changeset[:description],
+                    :paths => files
+                  })
                   if block_given?
                     yield revision
                   else
