@@ -65,7 +65,7 @@ class Repository::Git < Repository
   def latest_changesets(path,rev)
     @latest_changesets ||= changesets.find(
       :all, 
-      :conditions => ["scmid IN (?)", scm.repo.log(rev,path, :n => 10).collect{|c| c.id}],
+      :conditions => ["scmid IN (?)", scm.revisions(path,rev,nil,{:limit => 10}).collect{|c| c.scmid}],
       :order => 'committed_on DESC'
     )
   end

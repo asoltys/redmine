@@ -29,20 +29,9 @@ module Redmine
         # Git executable name
         GIT_BIN = "git"
 
-        def initialize(*args)
-          args[1] = args[0]
-          super(*args)
-
-          begin
-            @repo = Grit::Repo.new(url, :is_bare => true)
-          rescue
-            Rails::logger.error "Repository could not be created"
-          end
-        end
-
         def info
           begin
-            Info.new(:root_url => url, :lastrev => @repo.log('all', nil, :n => 1).first.to_revision)
+            Info.new(:root_url => url, :lastrev => lastrev(''))
           rescue
             nil
           end
@@ -59,10 +48,6 @@ module Redmine
           branches.sort!
         end
 
-        def default_branch
-          'default'
-        end
-
         def tags
           tags = []
           cmd = "cd #{target('')} && #{GIT_BIN} tag"
@@ -72,11 +57,7 @@ module Redmine
         end
 
         def default_branch
-          begin
-            @repo.default_branch
-          rescue
-            nil
-          end
+          branches.include?('master') ? 'master' : branches.first 
         end
         
         def entries(path=nil, identifier=nil)
@@ -109,7 +90,7 @@ module Redmine
 
         def lastrev(path)
           return nil if path.nil?
-          cmd = "#{GIT_BIN} --git-dir #{target('')} log --pretty=fuller --no-merges "
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log --pretty=fuller --no-merges -n 1 "
           cmd <<  "-- #{path} " unless path.empty?
           shellout(cmd) do |io|
             id = io.gets.split[1]
@@ -257,58 +238,6 @@ module Redmine
           cat
         end
       end
-    end
-  end
-end
-
-module Grit
-  class Repo
-    def log(commit = 'all', path = nil, options = {})
-      default_options = {:pretty => "raw", "no-merges" => true}
-      commit = default_branch if commit.nil?
-
-      if commit == 'all'
-        commit = default_branch 
-        default_options.merge!(:all => true)
-      end
-
-      actual_options  = default_options.merge(options)
-      arg = path ? [commit, '--', path] : [commit]
-      commits = self.git.log(actual_options, *arg)
-      Commit.list_from_string(self, commits)
-    end
-
-    def default_branch
-      if branches.map{|h| h.name}.include?('master') 
-        'master'
-      else
-        branches.first.name
-      end
-    end
-  end
-
-  class Diff
-    def action
-      return 'A' if new_file
-      return 'D' if deleted_file
-      return 'M'
-    end
-
-    def path
-      return a_path if a_path
-      return b_path if b_path
-    end
-  end
-
-  class Commit
-    def to_revision
-      Redmine::Scm::Adapters::Revision.new({
-        :identifier => id,
-        :scmid => id,
-        :author => "#{author.name} <#{author.email}>",
-        :time => committed_date,
-        :message => message
-      })
     end
   end
 end
