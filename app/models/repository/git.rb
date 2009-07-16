@@ -55,10 +55,10 @@ class Repository::Git < Repository
     scm.tags
   end
 
-  def latest_changesets(path,rev)
+  def latest_changesets(path,rev,limit=10)
     @latest_changesets ||= changesets.find(
       :all, 
-      :conditions => ["scmid IN (?)", scm.revisions(path,nil,rev,{:limit => 10}).collect{|c| c.scmid}],
+      :conditions => ["scmid IN (?)", scm.revisions(path,nil,rev,{:limit => limit}).collect{|c| c.scmid}],
       :order => 'committed_on DESC'
     )
   end

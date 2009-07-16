@@ -109,7 +109,7 @@ module Redmine
           revisions = Revisions.new
           cmd = "#{GIT_BIN} --git-dir #{target('')} log -M -C --raw --date=iso --pretty=fuller"
           cmd << " --reverse" if options[:reverse]
-          cmd << " -n #{options[:limit].to_i} " if (!options.nil?) && options[:limit]
+          cmd << " -n #{options[:limit]} " if (!options.nil?) && options[:limit]
           cmd << " #{shell_quote(identifier_from + '..')} " if identifier_from
           cmd << " #{shell_quote identifier_to} " if identifier_to
           cmd << " -- #{path}" if path && !path.empty?
@@ -188,12 +188,13 @@ module Redmine
 
         def diff(path, identifier_from, identifier_to=nil)
           path ||= ''
-          if !identifier_to
-            identifier_to = nil
+
+          if identifier_to
+            cmd = "#{GIT_BIN} --git-dir #{target('')} diff #{shell_quote identifier_to} #{shell_quote identifier_from}" 
+          else
+            cmd = "#{GIT_BIN} --git-dir #{target('')} show #{shell_quote identifier_from}"
           end
-          
-          cmd = "#{GIT_BIN} --git-dir #{target('')} show #{shell_quote identifier_from}" if identifier_to.nil?
-          cmd = "#{GIT_BIN} --git-dir #{target('')} diff #{shell_quote identifier_to} #{shell_quote identifier_from}" if !identifier_to.nil?
+
           cmd << " -- #{shell_quote path}" unless path.empty?
           diff = []
           shellout(cmd) do |io|
