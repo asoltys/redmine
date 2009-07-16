@@ -16,22 +16,17 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 require 'redmine/scm/adapters/abstract_adapter'
-require 'grit'
-
-
 
 module Redmine
   module Scm
     module Adapters    
       class GitAdapter < AbstractAdapter
-        attr_accessor :repo
-
         # Git executable name
         GIT_BIN = "git"
 
         def info
           begin
-            Info.new(:root_url => url, :lastrev => lastrev(''))
+            Info.new(:root_url => url, :lastrev => lastrev('',nil))
           rescue
             nil
           end
@@ -79,7 +74,7 @@ module Redmine
                  :path => full_path,
                  :kind => (type == "tree") ? 'dir' : 'file',
                  :size => (type == "tree") ? nil : size,
-                 :lastrev => lastrev(full_path)
+                 :lastrev => lastrev(full_path,identifier)
                 }) unless entries.detect{|entry| entry.name == name}
               end
             end
@@ -88,9 +83,10 @@ module Redmine
           entries.sort_by_name
         end
 
-        def lastrev(path)
+        def lastrev(path,rev)
           return nil if path.nil?
           cmd = "#{GIT_BIN} --git-dir #{target('')} log --pretty=fuller --no-merges -n 1 "
+          cmd << " #{shell_quote rev} " if rev 
           cmd <<  "-- #{path} " unless path.empty?
           shellout(cmd) do |io|
             id = io.gets.split[1]
@@ -111,11 +107,12 @@ module Redmine
 
         def revisions(path, identifier_from, identifier_to, options={})
           revisions = Revisions.new
-          cmd = "#{GIT_BIN} --git-dir #{target('')} log -M -C --all --raw --date=iso --pretty=fuller"
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log -M -C --raw --date=iso --pretty=fuller"
           cmd << " --reverse" if options[:reverse]
           cmd << " -n #{options[:limit].to_i} " if (!options.nil?) && options[:limit]
           cmd << " #{shell_quote(identifier_from + '..')} " if identifier_from
           cmd << " #{shell_quote identifier_to} " if identifier_to
+          cmd << " -- #{path}" if path && !path.empty?
           shellout(cmd) do |io|
             files=[]
             changeset = {}

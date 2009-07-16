@@ -39,15 +39,8 @@ class Repository::Git < Repository
   def fetch_changesets
     # latest revision found in database
     db_revision = latest_changeset ? latest_changeset.revision : nil
-
-    # latest revision in the repository
-    if scm.info.nil? || scm.info.lastrev.nil?
-      scm_revision = nil
-    else
-      scm_revision = scm.info.lastrev.scmid 
-    end
-
-    unless scm_revision.nil? || changesets.find_by_scmid(scm_revision)
+    return if scm.info.nil? || scm.info.lastrev.nil?
+    unless changesets.find_by_scmid(scm.info.lastrev)
       scm.revisions('', db_revision, nil, :reverse => true).each do |revision|
         revision.save(self)
       end
@@ -65,7 +58,7 @@ class Repository::Git < Repository
   def latest_changesets(path,rev)
     @latest_changesets ||= changesets.find(
       :all, 
-      :conditions => ["scmid IN (?)", scm.revisions(path,rev,nil,{:limit => 10}).collect{|c| c.scmid}],
+      :conditions => ["scmid IN (?)", scm.revisions(path,nil,rev,{:limit => 10}).collect{|c| c.scmid}],
       :order => 'committed_on DESC'
     )
   end
