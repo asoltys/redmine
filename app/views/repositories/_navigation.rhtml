@@ -2,7 +2,7 @@
 
 <% form_tag({:action => controller.action_name, :id => @project, :path => @path, :rev => ''}, {:method => :get, :id => 'revision_selector'}) do -%>
   <!-- Branches Dropdown -->
-  <% if !@repository.branches.nil? -%>
+  <% if !@repository.branches.nil? && @repository.branches.length > 0 -%>
   |
     <% content_for :header_tags do %>
         <%= javascript_include_tag 'repository_navigation' %>
@@ -12,7 +12,7 @@
     <%= select_tag :branch, options_for_select([''] + @repository.branches,@rev), :id => 'branch' %>
   <% end -%>
 
-  <% if !@repository.tags.nil? -%>
+  <% if !@repository.tags.nil? && @repository.tags.length > 0 -%>
   |
     <% content_for :header_tags do %>
         <%= javascript_include_tag 'repository_navigation' %>
