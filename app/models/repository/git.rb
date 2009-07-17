@@ -29,11 +29,22 @@ class Repository::Git < Repository
     'Git'
   end
 
+  def branches
+    scm.branches
+  end
+
+  def tags
+    scm.tags
+  end
+
   def changesets_for_path(path, options={})
-    Change.find(:all, :include => {:changeset => :user}, 
-                :conditions => ["repository_id = ? AND path = ?", id, path],
-                :order => "committed_on DESC, #{Changeset.table_name}.revision DESC",
-                :limit => options[:limit]).collect(&:changeset)
+    Change.find(
+      :all, 
+      :include => {:changeset => :user}, 
+      :conditions => ["repository_id = ? AND path = ?", id, path],
+      :order => "committed_on DESC, #{Changeset.table_name}.revision DESC",
+      :limit => options[:limit]
+    ).collect(&:changeset)
   end
 
   def fetch_changesets
@@ -47,18 +58,13 @@ class Repository::Git < Repository
     end
   end
 
-  def branches
-    scm.branches
-  end
-
-  def tags
-    scm.tags
-  end
-
   def latest_changesets(path,rev,limit=10)
-    @latest_changesets ||= changesets.find(
+    changesets.find(
       :all, 
-      :conditions => ["scmid IN (?)", scm.revisions(path,nil,rev,{:limit => limit}).collect{|c| c.scmid}],
+      :conditions => [
+        "scmid IN (?)", 
+        scm.revisions(path, nil, rev, limit).map!{|c| c.scmid}
+      ],
       :order => 'committed_on DESC'
     )
   end

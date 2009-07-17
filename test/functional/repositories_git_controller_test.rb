@@ -91,10 +91,6 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
       assert_equal ['delete.png'], assigns(:entries).collect(&:name)
     end
 
-=begin
-    Even with a rev param, this seems to render the list page rather than a single revision
-    assert_template 'revision' passes though...?
-
     def test_view_revision
       get :revisions, :id => 3, :rev => 'deff712f05a90d96edbd70facc47d944be5897e3'
       assert_response :success
@@ -104,7 +100,6 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
         :attributes => {:class => /change-A/},
         :child => { :tag => 'a', :child => 'new_file.txt' }
     end
-=end
 
     def test_changes
       get :changes, :id => 3, :path => ['images', 'edit.png']

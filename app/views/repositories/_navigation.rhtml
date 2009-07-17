@@ -1,6 +1,6 @@
 <%= link_to l(:label_statistics), {:action => 'stats', :id => @project}, :class => 'icon icon-stats' %>
 
-<% form_tag({:id => @project, :path => @path}, :method => :get, :id => 'revision_selector') do -%>
+<% form_tag({:action => controller.action_name, :id => @project, :path => @path, :rev => ''}, {:method => :get, :id => 'revision_selector'}) do -%>
   <!-- Branches Dropdown -->
   <% if !@repository.branches.nil? -%>
   |

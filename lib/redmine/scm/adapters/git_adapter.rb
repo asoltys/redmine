@@ -107,12 +107,14 @@ module Redmine
 
         def revisions(path, identifier_from, identifier_to, options={})
           revisions = Revisions.new
+
           cmd = "#{GIT_BIN} --git-dir #{target('')} log -M -C --raw --date=iso --pretty=fuller"
           cmd << " --reverse" if options[:reverse]
           cmd << " -n #{options[:limit]} " if (!options.nil?) && options[:limit]
           cmd << " #{shell_quote(identifier_from + '..')} " if identifier_from
           cmd << " #{shell_quote identifier_to} " if identifier_to
           cmd << " -- #{path}" if path && !path.empty?
+
           shellout(cmd) do |io|
             files=[]
             changeset = {}
