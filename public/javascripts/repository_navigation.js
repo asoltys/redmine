@@ -16,13 +16,18 @@ Event.observe(window,'load',function() {
       $('rev').setValue(e.element().getValue());
       $$('#branch,#tag').invoke('disable');
       e.element().parentNode.submit();
+      $$('#branch,#tag').invoke('enable');
     });
   });
 
   /*
   Disable the branch/tag dropdowns before submitting the revision form
   */
-  $('revision_selector').observe('submit', function() {
-    $$('#branch,#tag').invoke('disable');
+  $('rev').observe('keydown', function(e) {
+    if (e.keyCode == 13) {
+      $$('#branch,#tag').invoke('disable');
+      e.element().parentNode.submit();
+      $$('#branch,#tag').invoke('enable');
+    }
   });
 })
