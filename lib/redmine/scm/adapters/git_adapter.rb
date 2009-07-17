@@ -47,7 +47,7 @@ module Redmine
           tags = []
           cmd = "cd #{target('')} && #{GIT_BIN} tag"
           shellout(cmd) do |io|
-            io.readlines.sort!
+            io.readlines.sort!.map{|t| t.strip}
           end
         end
 

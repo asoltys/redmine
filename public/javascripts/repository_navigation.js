@@ -1,6 +1,6 @@
 Event.observe(window,'load',function() {
   /* 
-  If we're viewing a named branch, don't display it in the
+  If we're viewing a tag or branch, don't display it in the
   revision box
   */
   if ($('rev').getValue() == $('branch').getValue() || $('rev').getValue() == $('tag').getValue()) {
@@ -8,8 +8,8 @@ Event.observe(window,'load',function() {
   }
 
   /* 
-  Temporarily disable the revision box if the branch drop-down
-  is changed since both fields are named 'rev'
+  Copy the branch/tag value into the revision box, then disable
+  the dropdowns before submitting the form
   */
   $$('#branch,#tag').each(function(e) {
     e.observe('change',function(e) {
@@ -17,5 +17,12 @@ Event.observe(window,'load',function() {
       $$('#branch,#tag').invoke('disable');
       e.element().parentNode.submit();
     });
+  });
+
+  /*
+  Disable the branch/tag dropdowns before submitting the revision form
+  */
+  $('revision_selector').observe('submit', function() {
+    $$('#branch,#tag').invoke('disable');
   });
 })
