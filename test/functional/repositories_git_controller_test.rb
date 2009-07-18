@@ -91,16 +91,6 @@ class RepositoriesGitControllerTest < Test::Unit::TestCase
       assert_equal ['delete.png'], assigns(:entries).collect(&:name)
     end
 
-    def test_view_revision
-      get :revisions, :id => 3, :rev => 'deff712f05a90d96edbd70facc47d944be5897e3'
-      assert_response :success
-      assert_template 'revision'
-      assert_tag :tag => 'h2', :child => "Revision #{assigns(:rev)[0,8]}"
-      assert_tag :tag => 'li', 
-        :attributes => {:class => /change-A/},
-        :child => { :tag => 'a', :child => 'new_file.txt' }
-    end
-
     def test_changes
       get :changes, :id => 3, :path => ['images', 'edit.png']
       assert_response :success
