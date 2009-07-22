@@ -52,7 +52,7 @@ class Repository::Git < Repository
     db_revision = latest_changeset ? latest_changeset.revision : nil
     return if scm.info.nil? || scm.info.lastrev.nil?
     unless changesets.find_by_scmid(scm.info.lastrev)
-      scm.revisions('', db_revision, nil, :reverse => true).each do |revision|
+      scm.revisions('', db_revision, nil, :reverse => true, :all => db_revision.nil?).each do |revision|
         revision.save(self)
       end
     end
@@ -63,7 +63,7 @@ class Repository::Git < Repository
       :all, 
       :conditions => [
         "scmid IN (?)", 
-        scm.revisions(path, nil, rev, limit).map!{|c| c.scmid}
+        scm.revisions(path, nil, rev, :limit => limit, :all => false).map!{|c| c.scmid}
       ],
       :order => 'committed_on DESC'
     )

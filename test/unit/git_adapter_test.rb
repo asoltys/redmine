@@ -13,7 +13,7 @@ class GitAdapterTest < Test::Unit::TestCase
     end
 
     def test_getting_all_revisions
-      assert_equal 11, @adapter.revisions('',nil,nil).length
+      assert_equal 11, @adapter.revisions('',nil,nil,:all => true).length
     end
   else
     puts "Git test repository NOT FOUND. Skipping unit tests !!!"
