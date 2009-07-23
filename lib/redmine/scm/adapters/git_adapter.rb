@@ -105,6 +105,11 @@ module Redmine
           end
         end
 
+        def num_revisions
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log --all --pretty=format:'' | wc -l"
+          shellout(cmd) {|io| io.gets.chomp.to_i + 1 }
+        end
+
         def revisions(path, identifier_from, identifier_to, options={})
           revisions = Revisions.new
 
