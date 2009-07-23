@@ -75,7 +75,33 @@ module Redmine
         rescue CommandFailed
           return nil
         end
-        
+
+        def branches
+          branches = []
+          cmd = "#{HG_BIN} -R #{target('')} --cwd #{target('')} branches"
+          shellout(cmd) do |io|
+            io.each_line do |line|
+              branches << line.chomp.split.first
+            end
+          end
+          branches.sort!
+        end
+
+        def default_branch
+          'default'
+        end
+
+        def tags 
+          tags = []
+          cmd = "#{HG_BIN} -R #{target('')} --cwd #{target('')} tags"
+          shellout(cmd) do |io|
+            io.each_line do |line|
+              tags << line.chomp.split.first
+            end
+          end
+          tags.sort!
+        end
+
         def entries(path=nil, identifier=nil)
           path ||= ''
           entries = Entries.new
@@ -105,11 +131,13 @@ module Redmine
         # makes Mercurial produce a xml output.
         def revisions(path=nil, identifier_from=nil, identifier_to=nil, options={})  
           revisions = Revisions.new
-          cmd = "#{HG_BIN} --debug --encoding utf8 -R #{target('')} log -C --style #{shell_quote self.class.template_path}"
+          cmd = "#{HG_BIN} --debug --encoding utf8 --cwd #{target('')} log -C --style #{shell_quote self.class.template_path}"
           if identifier_from && identifier_to
             cmd << " -r #{identifier_from.to_i}:#{identifier_to.to_i}"
+          elsif branches.include? identifier_from
+            cmd << " -b #{identifier_from}"
           elsif identifier_from
-            cmd << " -r #{identifier_from.to_i}:"
+            cmd << " -r #{identifier_from}:"
           end
           cmd << " --limit #{options[:limit].to_i}" if options[:limit]
           cmd << " #{path}" if path

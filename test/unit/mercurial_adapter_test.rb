@@ -10,27 +10,54 @@ begin
     
     REPOSITORY_PATH = RAILS_ROOT.gsub(%r{config\/\.\.}, '') + '/tmp/test/mercurial_repository'
     
-    def test_hgversion
-      to_test = { "0.9.5" => [0,9,5],
-                  "1.0" => [1,0],
-                  "1e4ddc9ac9f7+20080325" => nil,
-                  "1.0.1+20080525" => [1,0,1],
-                  "1916e629a29d" => nil}
-      
-      to_test.each do |s, v|
-        test_hgversion_for(s, v)
+    if File.directory?(REPOSITORY_PATH)  
+      def test_hgversion
+        to_test = { "0.9.5" => [0,9,5],
+                    "1.0" => [1,0],
+                    "1e4ddc9ac9f7+20080325" => nil,
+                    "1.0.1+20080525" => [1,0,1],
+                    "1916e629a29d" => nil}
+        
+        to_test.each do |s, v|
+          test_hgversion_for(s, v)
+        end
       end
-    end
-    
-    def test_template_path
-      to_test = { [0,9,5] => "0.9.5",
-                  [1,0] => "1.0",
-                  [] => "1.0",
-                  [1,0,1] => "1.0"}
       
-      to_test.each do |v, template|
-        test_template_path_for(v, template)
+      def test_template_path
+        to_test = { [0,9,5] => "0.9.5",
+                    [1,0] => "1.0",
+                    [] => "1.0",
+                    [1,0,1] => "1.0"}
+        
+        to_test.each do |v, template|
+          test_template_path_for(v, template)
+        end
       end
+
+      def test_branches
+        adapter = Redmine::Scm::Adapters::MercurialAdapter.new(REPOSITORY_PATH)
+        assert_equal ['default','test_branch'], adapter.branches
+      end
+      
+      def test_default_branch
+        adapter = Redmine::Scm::Adapters::MercurialAdapter.new(REPOSITORY_PATH)
+        assert_equal 'default', adapter.default_branch
+      end
+
+      def test_branch_entries
+        adapter = Redmine::Scm::Adapters::MercurialAdapter.new(REPOSITORY_PATH)
+        assert_equal 1, adapter.entries('sources','default').length
+        assert_equal 2, adapter.entries('sources','test_branch').length
+      end
+
+      def test_branch_revisions
+        adapter = Redmine::Scm::Adapters::MercurialAdapter.new(REPOSITORY_PATH)
+        assert_equal 6, adapter.revisions('','default').length
+        assert_equal 2, adapter.revisions('','test_branch').length
+      end
+    else
+      puts "Mercurial test repository NOT FOUND. Skipping unit tests !!!"
+      def test_fake; assert true end
     end
     
     private

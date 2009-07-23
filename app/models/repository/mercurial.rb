@@ -91,4 +91,12 @@ class Repository::Mercurial < Repository
       end
     end
   end
+
+  def latest_changesets(path,rev)
+    @latest_changesets ||= changesets.find(
+      :all, 
+      :conditions => ["scmid IN (?)", scm.revisions(path,rev).collect{|c| c.scmid}],
+      :order => 'committed_on DESC'
+    )
+  end   
 end
