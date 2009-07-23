@@ -47,15 +47,23 @@ class Repository::Git < Repository
     ).collect(&:changeset)
   end
 
+  # With SCM's that have a sequential commit numbering, redmine is able to be
+  # clever and only fetch changesets going forward from the most recent one
+  # it knows about.  However, with git, you never know if people have merged
+  # commits into the middle of the repository history, so we always have to
+  # parse the entire log.
   def fetch_changesets
-    # latest revision found in database
-    db_revision = latest_changeset ? latest_changeset.revision : nil
-    return if scm.info.nil? || scm.info.lastrev.nil?
-    unless changesets.find_by_scmid(scm.info.lastrev)
-      scm.revisions('', db_revision, nil, :reverse => true, :all => db_revision.nil?).each do |revision|
-        revision.save(self)
-      end
-    end
+    # Get all revisions by running 'git log --all'
+    revisions = scm.revisions('', nil, nil, :all => true)
+
+    # Find revisions that redmine knows about already
+    existing_revisions = changesets.find(:all).map!{|c| c.scmid}
+
+    # Ignore them 
+    revisions.reject!{|r| existing_revisions.include?(r.scmid)}
+
+    # Save the remaining ones to the database
+    revisions.each{|r| r.save(self)} unless revisions.nil?
   end
 
   def latest_changesets(path,rev,limit=10)
