@@ -860,3 +860,6 @@ ko:
   mail_body_wiki_content_updated: 위키페이지 '{{page}}' 가 {{author}}에 의하여 고쳐젔습니다.
   permission_add_project: 프로젝트 생성
   setting_new_project_user_role_id: 프로젝트를 만든 일반사용자에게 주어질 권한
+  label_view_all_revisions: View all revisions
+  label_tag: Tag
+  label_branch: Branch
