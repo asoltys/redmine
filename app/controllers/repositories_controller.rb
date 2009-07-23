@@ -83,7 +83,7 @@ class RepositoriesController < ApplicationController
   def changes
     @entry = @repository.entry(@path, @rev)
     show_error_not_found and return unless @entry
-    @changesets = @repository.latest_changesets(@path,@rev, :limit => Setting.repository_log_display_limit.to_i)
+    @changesets = @repository.latest_changesets(@path, @rev, Setting.repository_log_display_limit.to_i)
     @properties = @repository.properties(@path, @rev)
   end
   
