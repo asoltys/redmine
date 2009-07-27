@@ -113,7 +113,7 @@ module Redmine
         def revisions(path, identifier_from, identifier_to, options={})
           revisions = Revisions.new
 
-          cmd = "#{GIT_BIN} --git-dir #{target('')} log -M -C --raw --date=iso --pretty=fuller"
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log --find-copies-harder --raw --date=iso --pretty=fuller"
           cmd << " --reverse" if options[:reverse]
           cmd << " --all" if options[:all]
           cmd << " -n #{options[:limit]} " if options[:limit]
@@ -162,10 +162,17 @@ module Redmine
               elsif (parsing_descr == 0) && line.chomp.to_s == ""
                 parsing_descr = 1
                 changeset[:description] = ""
-              elsif (parsing_descr == 1 || parsing_descr == 2) && line =~ /^:\d+\s+\d+\s+[0-9a-f.]+\s+[0-9a-f.]+\s+(\w)\s+(.+)$/
+              elsif (parsing_descr == 1 || parsing_descr == 2) \
+              && line =~ /^:\d+\s+\d+\s+[0-9a-f.]+\s+[0-9a-f.]+\s+(\w)\s+(.+)$/
                 parsing_descr = 2
                 fileaction = $1
                 filepath = $2
+                files << {:action => fileaction, :path => filepath}
+              elsif (parsing_descr == 1 || parsing_descr == 2) \
+              && line =~ /^:\d+\s+\d+\s+[0-9a-f.]+\s+[0-9a-f.]+\s+(\w)\d+\s+(\S+)\s+(.+)$/
+                parsing_descr = 2
+                fileaction = $1
+                filepath = $3
                 files << {:action => fileaction, :path => filepath}
               elsif (parsing_descr == 1) && line.chomp.to_s == ""
                 parsing_descr = 2
