@@ -9,11 +9,11 @@ class GitAdapterTest < Test::Unit::TestCase
     end
 
     def test_branches
-      assert_equal @adapter.branches.map{|b| b.name}, ['master', 'test_branch']
+      assert_equal @adapter.branches, ['master', 'test_branch']
     end
 
     def test_getting_all_revisions
-      assert_equal 11, @adapter.revisions('',nil,nil,:all => true).length
+      assert_equal 12, @adapter.revisions('',nil,nil,:all => true).length
     end
   else
     puts "Git test repository NOT FOUND. Skipping unit tests !!!"
