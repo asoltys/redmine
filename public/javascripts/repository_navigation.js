@@ -3,7 +3,9 @@ Event.observe(window,'load',function() {
   If we're viewing a tag or branch, don't display it in the
   revision box
   */
-  if ($('rev').getValue() == $('branch').getValue() || $('rev').getValue() == $('tag').getValue()) {
+  var branch_selected = $('branch') && $('rev').getValue() == $('branch').getValue();
+  var tag_selected = $('tag') && $('rev').getValue() == $('tag').getValue();
+  if (branch_selected || tag_selected) {
     $('rev').setValue('');
   }
 
