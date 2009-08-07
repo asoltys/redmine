@@ -53,11 +53,11 @@ class Repository::Git < Repository
   # commits into the middle of the repository history, so we always have to
   # parse the entire log.
   def fetch_changesets
-    # Check if there are changes
+    # Save ourselves an expensive operation if we're already up to date
     return if scm.num_revisions == changesets.count
 
-    # Get all revisions by running 'git log --all'
     revisions = scm.revisions('', nil, nil, :all => true)
+    return if revisions.nil? || revisions.empty?
 
     # Find revisions that redmine knows about already
     existing_revisions = changesets.find(:all).map!{|c| c.scmid}
@@ -65,7 +65,7 @@ class Repository::Git < Repository
     # Clean out revisions that are no longer in git
     Changeset.delete_all(["scmid NOT IN (?) AND repository_id = (?)", revisions.map{|r| r.scmid}, self.id])
 
-    # Ignore them 
+    # Subtract revisions that redmine already knows about
     revisions.reject!{|r| existing_revisions.include?(r.scmid)}
 
     # Save the remaining ones to the database
@@ -73,11 +73,14 @@ class Repository::Git < Repository
   end
 
   def latest_changesets(path,rev,limit=10)
+    revisions = scm.revisions(path, nil, rev, :limit => limit, :all => false)
+    return [] if revisions.nil? || revisions.empty?
+
     changesets.find(
       :all, 
       :conditions => [
         "scmid IN (?)", 
-        scm.revisions(path, nil, rev, :limit => limit, :all => false).map!{|c| c.scmid}
+        revisions.map!{|c| c.scmid}
       ],
       :order => 'committed_on DESC'
     )
