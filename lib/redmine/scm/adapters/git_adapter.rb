@@ -34,7 +34,7 @@ module Redmine
 
         def branches
           branches = []
-          cmd = "cd #{target('')} && #{GIT_BIN} branch"
+          cmd = "#{GIT_BIN} --git-dir #{target('')} branch"
           shellout(cmd) do |io|
             io.each_line do |line|
               branches << line.match('\s*\*?\s*(.*)$')[1]
@@ -45,7 +45,7 @@ module Redmine
 
         def tags
           tags = []
-          cmd = "cd #{target('')} && #{GIT_BIN} tag"
+          cmd = "#{GIT_BIN} --git-dir #{target('')} tag"
           shellout(cmd) do |io|
             io.readlines.sort!.map{|t| t.strip}
           end
@@ -89,25 +89,30 @@ module Redmine
           cmd << " #{shell_quote rev} " if rev 
           cmd <<  "-- #{path} " unless path.empty?
           shellout(cmd) do |io|
-            id = io.gets.split[1]
-            author = io.gets.match('Author:\s+(.*)$')[1]
-            2.times { io.gets }
-            time = io.gets.match('CommitDate:\s+(.*)$')[1]
+            begin
+              id = io.gets.split[1]
+              author = io.gets.match('Author:\s+(.*)$')[1]
+              2.times { io.gets }
+              time = io.gets.match('CommitDate:\s+(.*)$')[1]
 
-            Revision.new({
-              :identifier => id,
-              :scmid => id,
-              :author => author, 
-              :time => time,
-              :message => nil, 
-              :paths => nil 
-            })
+              Revision.new({
+                :identifier => id,
+                :scmid => id,
+                :author => author, 
+                :time => time,
+                :message => nil, 
+                :paths => nil 
+              })
+            rescue NoMethodError => e
+              logger.error("The revision '#{path}' has a wrong format")
+              return nil
+            end
           end
         end
 
         def num_revisions
           cmd = "#{GIT_BIN} --git-dir #{target('')} log --all --pretty=format:'' | wc -l"
-          shellout(cmd) {|io| io.gets.chomp.to_i + 1 }
+          shellout(cmd) {|io| io.gets.chomp.to_i + 1}
         end
 
         def revisions(path, identifier_from, identifier_to, options={})
@@ -182,13 +187,15 @@ module Redmine
             end 
 
             if changeset[:commit]
-              revision = Revision.new({:identifier => changeset[:commit],
-                                       :scmid => changeset[:commit],
-                                       :author => changeset[:author],
-                                       :time => Time.parse(changeset[:date]),
-                                       :message => changeset[:description],
-                                       :paths => files
-                                      })
+              revision = Revision.new({
+                :identifier => changeset[:commit],
+                :scmid => changeset[:commit],
+                :author => changeset[:author],
+                :time => Time.parse(changeset[:date]),
+                :message => changeset[:description],
+                :paths => files
+              })
+
               if block_given?
                 yield revision
               else
