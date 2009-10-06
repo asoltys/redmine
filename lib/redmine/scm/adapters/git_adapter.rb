@@ -23,6 +23,7 @@ module Redmine
       class GitAdapter < AbstractAdapter
         # Git executable name
         GIT_BIN = "git"
+        ENTRY_KINDS = {'tree' => 'dir', 'blob' => 'file', 'commit' => 'link'}
 
         def info
           begin
@@ -72,8 +73,8 @@ module Redmine
                 full_path = path.empty? ? name : "#{path}/#{name}"
                 entries << Entry.new({:name => name,
                  :path => full_path,
-                 :kind => (type == "tree") ? 'dir' : 'file',
-                 :size => (type == "tree") ? nil : size,
+                 :kind => ENTRY_KINDS[type],
+                 :size => (type == "blob") ? size : nil,
                  :lastrev => lastrev(full_path,identifier)
                 }) unless entries.detect{|entry| entry.name == name}
               end
