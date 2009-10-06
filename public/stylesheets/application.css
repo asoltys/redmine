@@ -686,6 +686,7 @@ vertical-align: middle;
 .icon-cancel { background-image: url(../images/cancel.png); }
 .icon-folder { background-image: url(../images/folder.png); }
 .open .icon-folder { background-image: url(../images/folder_open.png); }
+.icon-link { background-image: url(../images/linked_folder.png); }
 .icon-package { background-image: url(../images/package.png); }
 .icon-home { background-image: url(../images/home.png); }
 .icon-user { background-image: url(../images/user.png); }
