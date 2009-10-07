@@ -50,7 +50,7 @@
 </div>
 
 
-<% principals = Principal.active.find(:all, :limit => 100, :order => 'type, login, lastname ASC') - @project.principals %>
+<% principals = Principal.active.find(:all, :order => 'type, login, lastname ASC') - @project.principals %>
 
 <div class="splitcontentright">
 <% if roles.any? && principals.any? %>
@@ -64,7 +64,7 @@
                  :url => { :controller => 'members', :action => 'autocomplete_for_member', :id => @project },
                  :with => 'q')
                   %>
-		
+
 		<div id="principals">
 			<%= principals_check_box_tags 'member[user_ids][]', principals %>
 		</div>
