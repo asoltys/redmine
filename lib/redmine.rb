@@ -193,6 +193,7 @@ Redmine::MenuManager.map :project_menu do |menu|
               :html => { :accesskey => Redmine::AccessKeys.key_for(:new_issue) }
   menu.push :gantt, { :controller => 'gantts', :action => 'show' }, :param => :project_id, :caption => :label_gantt
   menu.push :calendar, { :controller => 'calendars', :action => 'show' }, :param => :project_id, :caption => :label_calendar
+  menu.push :time_entries, {:controller => 'timelog', :action => 'edit'}, :param => :project_id, :caption => :button_log_time 
   menu.push :news, { :controller => 'news', :action => 'index' }, :param => :project_id, :caption => :label_news_plural
   menu.push :documents, { :controller => 'documents', :action => 'index' }, :param => :project_id, :caption => :label_document_plural
   menu.push :wiki, { :controller => 'wiki', :action => 'show', :id => nil }, :param => :project_id,
