@@ -107,7 +107,7 @@ class RepositoriesController < ApplicationController
     @entry = @repository.entry(@path, @rev)
     show_error_not_found and return unless @entry
     
-    # If the entry is a dir, show the browser
+    submodule and return if @entry.is_link?
     show and return if @entry.is_dir?
     
     @content = @repository.cat(@path, @rev)
@@ -120,6 +120,10 @@ class RepositoriesController < ApplicationController
       @content.gsub!("\r\n", "\n")
    end
   end
+
+  def submodule
+    render :action => 'submodule'
+  end    
   
   def annotate
     @entry = @repository.entry(@path, @rev)

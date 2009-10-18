@@ -105,6 +105,12 @@ class RepositoriesGitControllerTest < ActionController::TestCase
       assert_equal ['delete.png'], assigns(:entries).collect(&:name)
     end
 
+    def test_browse_submodule
+      get :entry, :id => 3, :path => ['module']
+      assert_response :success
+      assert_template 'submodule'
+    end
+
     def test_changes
       get :changes, :id => 3, :path => ['images', 'edit.png']
       assert_response :success
