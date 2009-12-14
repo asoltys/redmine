@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class DocumentsController < ApplicationController
+  default_search_scope :documents
   before_filter :find_project, :only => [:index, :new]
   before_filter :find_document, :except => [:index, :new]
   before_filter :authorize
@@ -27,7 +28,7 @@ class DocumentsController < ApplicationController
     documents = @project.documents.find :all, :include => [:attachments, :category]
     case @sort_by
     when 'date'
-      @grouped = documents.group_by {|d| d.created_on.to_date }
+      @grouped = documents.group_by {|d| d.updated_on.to_date }
     when 'title'
       @grouped = documents.group_by {|d| d.title.first.upcase}
     when 'author'

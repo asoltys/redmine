@@ -214,14 +214,18 @@ class User < Principal
   def self.find_by_mail(mail)
     find(:first, :conditions => ["LOWER(mail) = ?", mail.to_s.downcase])
   end
-
-  # Sort users by their display names
-  def <=>(user)
-    self.to_s.downcase <=> user.to_s.downcase
-  end
   
   def to_s
     name
+  end
+  
+  # Returns the current day according to user's time zone
+  def today
+    if time_zone.nil?
+      Date.today
+    else
+      Time.now.in_time_zone(time_zone).to_date
+    end
   end
   
   def logged?
@@ -337,7 +341,7 @@ class AnonymousUser < User
   # Overrides a few properties
   def logged?; false end
   def admin; false end
-  def name; 'Anonymous' end
+  def name(*args); I18n.t(:label_user_anonymous) end
   def mail; nil end
   def time_zone; nil end
   def rss_key; nil end

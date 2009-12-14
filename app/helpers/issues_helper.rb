@@ -15,8 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require 'csv'
-
 module IssuesHelper
   include ApplicationHelper
 
@@ -26,7 +24,7 @@ module IssuesHelper
     @cached_label_assigned_to ||= l(:field_assigned_to)
     @cached_label_priority ||= l(:field_priority)
     
-    link_to_issue(issue) + ": #{h(issue.subject)}<br /><br />" +
+    link_to_issue(issue) + "<br /><br />" +
       "<strong>#{@cached_label_start_date}</strong>: #{format_date(issue.start_date)}<br />" +
       "<strong>#{@cached_label_due_date}</strong>: #{format_date(issue.due_date)}<br />" +
       "<strong>#{@cached_label_assigned_to}</strong>: #{issue.assigned_to}<br />" +
@@ -93,8 +91,8 @@ module IssuesHelper
         c = IssueCategory.find_by_id(detail.value) and value = c.name if detail.value
         c = IssueCategory.find_by_id(detail.old_value) and old_value = c.name if detail.old_value
       when 'fixed_version_id'
-        v = Version.find_by_id(detail.value) and value = v.name if detail.value
-        v = Version.find_by_id(detail.old_value) and old_value = v.name if detail.old_value
+        v = Version.find_by_id(detail.value) and value = format_version_name(v) if detail.value
+        v = Version.find_by_id(detail.old_value) and old_value = format_version_name(v) if detail.old_value
       when 'estimated_hours'
         value = "%0.02f" % detail.value.to_f unless detail.value.blank?
         old_value = "%0.02f" % detail.old_value.to_f unless detail.old_value.blank?
@@ -146,8 +144,7 @@ module IssuesHelper
   def issues_to_csv(issues, project = nil)
     ic = Iconv.new(l(:general_csv_encoding), 'UTF-8')    
     decimal_separator = l(:general_csv_decimal_separator)
-    export = StringIO.new
-    CSV::Writer.generate(export, l(:general_csv_separator)) do |csv|
+    export = FCSV.generate(:col_sep => l(:general_csv_separator)) do |csv|
       # csv header fields
       headers = [ "#",
                   l(:field_status), 
@@ -197,7 +194,6 @@ module IssuesHelper
         csv << fields.collect {|c| begin; ic.iconv(c.to_s); rescue; c.to_s; end }
       end
     end
-    export.rewind
     export
   end
 end

@@ -212,7 +212,7 @@ es:
   default_activity_development: Desarrollo
   default_doc_category_tech: Documentación técnica
   default_doc_category_user: Documentación de usuario
-  default_issue_status_assigned: Asignada
+  default_issue_status_in_progress: In Progress
   default_issue_status_closed: Cerrada
   default_issue_status_feedback: Comentarios
   default_issue_status_new: Nueva
@@ -276,7 +276,6 @@ es:
   field_is_default: Estado por defecto
   field_is_filter: Usado como filtro
   field_is_for_all: Para todos los proyectos
-  field_is_in_chlog: Consultar las peticiones en el histórico
   field_is_in_roadmap: Consultar las peticiones en la planificación
   field_is_public: Público
   field_is_required: Obligatorio
@@ -368,7 +367,6 @@ es:
   label_browse: Hojear
   label_bulk_edit_selected_issues: Editar las peticiones seleccionadas
   label_calendar: Calendario
-  label_change_log: Cambios
   label_change_plural: Cambios
   label_change_properties: Cambiar propiedades
   label_change_status: Cambiar el estado
@@ -868,6 +866,38 @@ es:
   text_journal_deleted: "{{label}} eliminado ({{old}})"
   label_group_plural: Grupos
   label_group: Grupo
-  label_group_new: Nuevo grupo
+  label_group_new: Grupo nuevo
   label_time_entry_plural: Tiempo dedicado
-  text_journal_added: "{{label}} {{value}} added"
+  text_journal_added: "Añadido {{label}} {{value}}"
+  field_active: Activo
+  enumeration_system_activity: Actividad del sistema
+  permission_delete_issue_watchers: Borrar seguidores
+  version_status_closed: cerrado
+  version_status_locked: bloqueado
+  version_status_open: abierto
+  error_can_not_reopen_issue_on_closed_version: Una tarea asignada a una versión cerrada no puede ser reabierta
+  label_user_anonymous: Anónimo
+  button_move_and_follow: Mover y seguir
+  setting_default_projects_modules: Módulos habilitados por defecto en proyectos nuevos
+  setting_gravatar_default: Imagen Gravatar por defecto
+  field_sharing: Sharing
+  button_copy_and_follow: Copy and follow
+  label_version_sharing_hierarchy: With project hierarchy
+  label_version_sharing_tree: With project tree
+  label_version_sharing_descendants: With subprojects
+  label_version_sharing_system: With all projects
+  label_version_sharing_none: Not shared
+  button_duplicate: Duplicate
+  error_can_not_archive_project: This project can not be archived
+  label_copy_source: Source
+  setting_issue_done_ratio: Calculate the issue done ratio with
+  setting_issue_done_ratio_issue_status: Use the issue status
+  error_issue_done_ratios_not_updated: Issue done ratios not updated.
+  error_workflow_copy_target: Please select target tracker(s) and role(s)
+  setting_issue_done_ratio_issue_field: Use the issue field
+  label_copy_same_as_target: Same as target
+  label_copy_target: Target
+  notice_issue_done_ratios_updated: Issue done ratios updated.
+  error_workflow_copy_source: Please select a source tracker or role
+  label_update_issue_done_ratios: Update issue done ratios
+  setting_start_of_week: Start calendars on

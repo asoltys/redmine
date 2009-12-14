@@ -147,6 +147,7 @@ en:
   notice_account_pending: "Your account was created and is now pending administrator approval."
   notice_default_data_loaded: Default configuration successfully loaded.
   notice_unable_delete_version: Unable to delete version.
+  notice_issue_done_ratios_updated: Issue done ratios updated.
   
   error_can_t_load_default_data: "Default configuration could not be loaded: {{value}}"
   error_scm_not_found: "The entry or revision was not found in the repository."
@@ -155,6 +156,11 @@ en:
   error_issue_not_found_in_project: 'The issue was not found or does not belong to this project'
   error_no_tracker_in_project: 'No tracker is associated to this project. Please check the Project settings.'
   error_no_default_issue_status: 'No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").'
+  error_can_not_reopen_issue_on_closed_version: 'An issue assigned to a closed version can not be reopened'
+  error_can_not_archive_project: This project can not be archived
+  error_issue_done_ratios_not_updated: "Issue done ratios not updated."
+  error_workflow_copy_source: 'Please select a source tracker or role'
+  error_workflow_copy_target: 'Please select target tracker(s) and role(s)'
   
   warning_attachments_not_saved: "{{count}} file(s) could not be saved."
   
@@ -215,7 +221,6 @@ en:
   field_homepage: Homepage
   field_is_public: Public
   field_parent: Subproject of
-  field_is_in_chlog: Issues displayed in changelog
   field_is_in_roadmap: Issues displayed in roadmap
   field_login: Login
   field_mail_notification: Email notifications
@@ -266,6 +271,7 @@ en:
   field_identity_url: OpenID URL
   field_content: Content
   field_group_by: Group results by
+  field_sharing: Sharing
   
   setting_app_title: Application title
   setting_app_subtitle: Application subtitle
@@ -305,12 +311,18 @@ en:
   setting_mail_handler_api_key: API key
   setting_sequential_project_identifiers: Generate sequential project identifiers
   setting_gravatar_enabled: Use Gravatar user icons
+  setting_gravatar_default: Default Gravatar image
   setting_diff_max_lines_displayed: Max number of diff lines displayed
   setting_file_max_size_displayed: Max size of text files displayed inline
   setting_repository_log_display_limit: Maximum number of revisions displayed on file log
   setting_openid: Allow OpenID login and registration
   setting_password_min_length: Minimum password length
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
+  setting_default_projects_modules: Default enabled modules for new projects
+  setting_issue_done_ratio: Calculate the issue done ratio with
+  setting_issue_done_ratio_issue_field: Use the issue field
+  setting_issue_done_ratio_issue_status: Use the issue status
+  setting_start_of_week: Start calendars on
   
   permission_add_project: Create project
   permission_edit_project: Edit project
@@ -329,9 +341,10 @@ en:
   permission_manage_public_queries: Manage public queries
   permission_save_queries: Save queries
   permission_view_gantt: View gantt chart
-  permission_view_calendar: View calender
+  permission_view_calendar: View calendar
   permission_view_issue_watchers: View watchers list
   permission_add_issue_watchers: Add watchers
+  permission_delete_issue_watchers: Delete watchers
   permission_log_time: Log spent time
   permission_view_time_entries: View spent time
   permission_edit_time_entries: Edit time logs
@@ -374,6 +387,7 @@ en:
   label_user: User
   label_user_plural: Users
   label_user_new: New user
+  label_user_anonymous: Anonymous
   label_project: Project
   label_project_new: New project
   label_project_plural: Projects
@@ -474,7 +488,6 @@ en:
   label_news_latest: Latest news
   label_news_view_all: View all news
   label_news_added: News added
-  label_change_log: Change log
   label_settings: Settings
   label_overview: Overview
   label_version: Version
@@ -704,6 +717,15 @@ en:
   label_group_plural: Groups
   label_group_new: New group
   label_time_entry_plural: Spent time
+  label_version_sharing_none: Not shared
+  label_version_sharing_descendants: With subprojects
+  label_version_sharing_hierarchy: With project hierarchy
+  label_version_sharing_tree: With project tree
+  label_version_sharing_system: With all projects
+  label_update_issue_done_ratios: Update issue done ratios
+  label_copy_source: Source
+  label_copy_target: Target
+  label_copy_same_as_target: Same as target
   
   button_login: Login
   button_submit: Submit
@@ -725,6 +747,7 @@ en:
   button_list: List
   button_view: View
   button_move: Move
+  button_move_and_follow: Move and follow
   button_back: Back
   button_cancel: Cancel
   button_activate: Activate
@@ -740,14 +763,22 @@ en:
   button_rename: Rename
   button_change_password: Change password
   button_copy: Copy
+  button_copy_and_follow: Copy and follow
   button_annotate: Annotate
   button_update: Update
   button_configure: Configure
   button_quote: Quote
+  button_duplicate: Duplicate
   
   status_active: active
   status_registered: registered
   status_locked: locked
+  
+  version_status_open: open
+  version_status_locked: locked
+  version_status_closed: closed
+
+  field_active: Active
   
   text_select_mail_notifications: Select actions for which email notifications should be sent.
   text_regexp_info: eg. ^[A-Z0-9]+$
@@ -810,7 +841,7 @@ en:
   default_tracker_feature: Feature
   default_tracker_support: Support
   default_issue_status_new: New
-  default_issue_status_assigned: Assigned
+  default_issue_status_in_progress: In Progress
   default_issue_status_resolved: Resolved
   default_issue_status_feedback: Feedback
   default_issue_status_closed: Closed
@@ -828,3 +859,4 @@ en:
   enumeration_issue_priorities: Issue priorities
   enumeration_doc_categories: Document categories
   enumeration_activities: Activities (time tracking)
+  enumeration_system_activity: System Activity

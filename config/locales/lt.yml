@@ -240,7 +240,6 @@ lt:
   field_homepage: Pagrindinis puslapis
   field_is_public: Viešas
   field_parent: Priklauso projektui
-  field_is_in_chlog: Darbai rodomi pokyčių žurnale
   field_is_in_roadmap: Darbai rodomi veiklos grafike
   field_login: Registracijos vardas
   field_mail_notification: Elektroninio pašto pranešimai
@@ -343,7 +342,7 @@ lt:
   permission_manage_public_queries: Manage public queries
   permission_save_queries: Save queries
   permission_view_gantt: View gantt chart
-  permission_view_calendar: View calender
+  permission_view_calendar: View calendar
   permission_view_issue_watchers: View watchers list
   permission_add_issue_watchers: Add watchers
   permission_log_time: Log spent time
@@ -487,7 +486,6 @@ lt:
   label_news_latest: Paskutinės naujienos
   label_news_view_all: Peržiūrėti visas žinias
   label_news_added: Naujiena pridėta
-  label_change_log: Pakeitimų žurnalas
   label_settings: Nustatymai
   label_overview: Apžvalga
   label_version: Versija
@@ -796,7 +794,7 @@ lt:
   default_tracker_feature: Ypatybė
   default_tracker_support: Palaikymas
   default_issue_status_new: Nauja
-  default_issue_status_assigned: Priskirta
+  default_issue_status_in_progress: In Progress
   default_issue_status_resolved: Išspręsta
   default_issue_status_feedback: Grįžtamasis ryšys
   default_issue_status_closed: Uždaryta
@@ -860,3 +858,35 @@ lt:
   label_group_new: New group
   label_time_entry_plural: Spent time
   text_journal_added: "{{label}} {{value}} added"
+  field_active: Active
+  enumeration_system_activity: System Activity
+  permission_delete_issue_watchers: Delete watchers
+  version_status_closed: closed
+  version_status_locked: locked
+  version_status_open: open
+  error_can_not_reopen_issue_on_closed_version: An issue assigned to a closed version can not be reopened
+  label_user_anonymous: Anonymous
+  button_move_and_follow: Move and follow
+  setting_default_projects_modules: Default enabled modules for new projects
+  setting_gravatar_default: Default Gravatar image
+  field_sharing: Sharing
+  label_version_sharing_hierarchy: With project hierarchy
+  label_version_sharing_system: With all projects
+  label_version_sharing_descendants: With subprojects
+  label_version_sharing_tree: With project tree
+  label_version_sharing_none: Not shared
+  error_can_not_archive_project: This project can not be archived
+  button_duplicate: Duplicate
+  button_copy_and_follow: Copy and follow
+  label_copy_source: Source
+  setting_issue_done_ratio: Calculate the issue done ratio with
+  setting_issue_done_ratio_issue_status: Use the issue status
+  error_issue_done_ratios_not_updated: Issue done ratios not updated.
+  error_workflow_copy_target: Please select target tracker(s) and role(s)
+  setting_issue_done_ratio_issue_field: Use the issue field
+  label_copy_same_as_target: Same as target
+  label_copy_target: Target
+  notice_issue_done_ratios_updated: Issue done ratios updated.
+  error_workflow_copy_source: Please select a source tracker or role
+  label_update_issue_done_ratios: Update issue done ratios
+  setting_start_of_week: Start calendars on

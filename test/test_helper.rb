@@ -21,6 +21,9 @@ require 'test_help'
 require File.expand_path(File.dirname(__FILE__) + '/helper_testcase')
 require File.join(RAILS_ROOT,'test', 'mocks', 'open_id_authentication_mock.rb')
 
+require File.expand_path(File.dirname(__FILE__) + '/object_daddy_helpers')
+include ObjectDaddyHelpers
+
 class ActiveSupport::TestCase
   # Transactional fixtures accelerate your tests by wrapping each test method
   # in a transaction that's rolled back on completion.  This ensures that the
@@ -46,6 +49,7 @@ class ActiveSupport::TestCase
   # Add more helper methods to be used by all tests here...
   
   def log_user(login, password)
+    User.anonymous
     get "/login"
     assert_equal nil, session[:user_id]
     assert_response :success

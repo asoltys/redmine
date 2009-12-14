@@ -18,8 +18,9 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class IssueTest < ActiveSupport::TestCase
-  fixtures :projects, :users, :members, :member_roles,
+  fixtures :projects, :users, :members, :member_roles, :roles,
            :trackers, :projects_trackers,
+           :versions,
            :issue_statuses, :issue_categories, :issue_relations, :workflows, 
            :enumerations,
            :issues,
@@ -61,6 +62,47 @@ class IssueTest < ActiveSupport::TestCase
     assert issue.save
     issue.reload
     assert_equal 'PostgreSQL', issue.custom_value_for(field).value
+  end
+  
+  def test_visible_scope_for_anonymous
+    # Anonymous user should see issues of public projects only
+    issues = Issue.visible(User.anonymous).all
+    assert issues.any?
+    assert_nil issues.detect {|issue| !issue.project.is_public?}
+    # Anonymous user should not see issues without permission
+    Role.anonymous.remove_permission!(:view_issues)
+    issues = Issue.visible(User.anonymous).all
+    assert issues.empty?
+  end
+  
+  def test_visible_scope_for_user
+    user = User.find(9)
+    assert user.projects.empty?
+    # Non member user should see issues of public projects only
+    issues = Issue.visible(user).all
+    assert issues.any?
+    assert_nil issues.detect {|issue| !issue.project.is_public?}
+    # Non member user should not see issues without permission
+    Role.non_member.remove_permission!(:view_issues)
+    user.reload
+    issues = Issue.visible(user).all
+    assert issues.empty?
+    # User should see issues of projects for which he has view_issues permissions only
+    Member.create!(:principal => user, :project_id => 2, :role_ids => [1])
+    user.reload
+    issues = Issue.visible(user).all
+    assert issues.any?
+    assert_nil issues.detect {|issue| issue.project_id != 2}
+  end
+  
+  def test_visible_scope_for_admin
+    user = User.find(1)
+    user.members.each(&:destroy)
+    assert user.projects.empty?
+    issues = Issue.visible(user).all
+    assert issues.any?
+    # Admin should see issues on private projects that he does not belong to
+    assert issues.detect {|issue| !issue.project.is_public?}
   end
   
   def test_errors_full_messages_should_include_custom_fields_errors
@@ -122,6 +164,46 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal custom_value.id, issue.custom_value_for(field).id
   end
   
+  def test_assigning_tracker_id_should_reload_custom_fields_values
+    issue = Issue.new(:project => Project.find(1))
+    assert issue.custom_field_values.empty?
+    issue.tracker_id = 1
+    assert issue.custom_field_values.any?
+  end
+  
+  def test_assigning_attributes_should_assign_tracker_id_first
+    attributes = ActiveSupport::OrderedHash.new
+    attributes['custom_field_values'] = { '1' => 'MySQL' }
+    attributes['tracker_id'] = '1'
+    issue = Issue.new(:project => Project.find(1))
+    issue.attributes = attributes
+    assert_not_nil issue.custom_value_for(1)
+    assert_equal 'MySQL', issue.custom_value_for(1).value
+  end
+  
+  def test_should_update_issue_with_disabled_tracker
+    p = Project.find(1)
+    issue = Issue.find(1)
+    
+    p.trackers.delete(issue.tracker)
+    assert !p.trackers.include?(issue.tracker)
+    
+    issue.reload
+    issue.subject = 'New subject'
+    assert issue.save
+  end
+  
+  def test_should_not_set_a_disabled_tracker
+    p = Project.find(1)
+    p.trackers.delete(Tracker.find(2))
+      
+    issue = Issue.find(1)
+    issue.tracker_id = 2
+    issue.subject = 'New subject'
+    assert !issue.save
+    assert_not_nil issue.errors.on(:tracker_id)
+  end
+  
   def test_category_based_assignment
     issue = Issue.create(:project_id => 1, :tracker_id => 1, :author_id => 3, :status_id => 1, :priority => IssuePriority.all.first, :subject => 'Assignment test', :description => 'Assignment test', :category_id => 1)
     assert_equal IssueCategory.find(1).assigned_to, issue.assigned_to
@@ -135,6 +217,16 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal orig.subject, issue.subject
     assert_equal orig.tracker, issue.tracker
     assert_equal orig.custom_values.first.value, issue.custom_values.first.value
+  end
+
+  def test_copy_should_copy_status
+    orig = Issue.find(8)
+    assert orig.status != IssueStatus.default
+    
+    issue = Issue.new.copy_from(orig)
+    assert issue.save
+    issue.reload
+    assert_equal orig.status, issue.status
   end
   
   def test_should_close_duplicates
@@ -184,6 +276,56 @@ class IssueTest < ActiveSupport::TestCase
     assert !issue1.reload.closed?
   end
   
+  def test_assignable_versions
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :fixed_version_id => 1, :subject => 'New issue')
+    assert_equal ['open'], issue.assignable_versions.collect(&:status).uniq
+  end
+  
+  def test_should_not_be_able_to_assign_a_new_issue_to_a_closed_version
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :fixed_version_id => 1, :subject => 'New issue')
+    assert !issue.save
+    assert_not_nil issue.errors.on(:fixed_version_id)
+  end
+  
+  def test_should_not_be_able_to_assign_a_new_issue_to_a_locked_version
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :fixed_version_id => 2, :subject => 'New issue')
+    assert !issue.save
+    assert_not_nil issue.errors.on(:fixed_version_id)
+  end
+  
+  def test_should_be_able_to_assign_a_new_issue_to_an_open_version
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :fixed_version_id => 3, :subject => 'New issue')
+    assert issue.save
+  end
+  
+  def test_should_be_able_to_update_an_issue_assigned_to_a_closed_version
+    issue = Issue.find(11)
+    assert_equal 'closed', issue.fixed_version.status
+    issue.subject = 'Subject changed'
+    assert issue.save
+  end
+  
+  def test_should_not_be_able_to_reopen_an_issue_assigned_to_a_closed_version
+    issue = Issue.find(11)
+    issue.status_id = 1
+    assert !issue.save
+    assert_not_nil issue.errors.on_base
+  end
+  
+  def test_should_be_able_to_reopen_and_reassign_an_issue_assigned_to_a_closed_version
+    issue = Issue.find(11)
+    issue.status_id = 1
+    issue.fixed_version_id = 3
+    assert issue.save
+  end
+  
+  def test_should_be_able_to_reopen_an_issue_assigned_to_a_locked_version
+    issue = Issue.find(12)
+    assert_equal 'locked', issue.fixed_version.status
+    issue.status_id = 1
+    assert issue.save
+  end
+  
   def test_move_to_another_project_with_same_category
     issue = Issue.find(1)
     assert issue.move_to(Project.find(2))
@@ -202,6 +344,46 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal 2, issue.project_id
     # Category cleared
     assert_nil issue.category_id
+  end
+  
+  def test_move_to_another_project_should_clear_fixed_version_when_not_shared
+    issue = Issue.find(1)
+    issue.update_attribute(:fixed_version_id, 1)
+    assert issue.move_to(Project.find(2))
+    issue.reload
+    assert_equal 2, issue.project_id
+    # Cleared fixed_version
+    assert_equal nil, issue.fixed_version
+  end
+  
+  def test_move_to_another_project_should_keep_fixed_version_when_shared_with_the_target_project
+    issue = Issue.find(1)
+    issue.update_attribute(:fixed_version_id, 4)
+    assert issue.move_to(Project.find(5))
+    issue.reload
+    assert_equal 5, issue.project_id
+    # Keep fixed_version
+    assert_equal 4, issue.fixed_version_id
+  end
+  
+  def test_move_to_another_project_should_clear_fixed_version_when_not_shared_with_the_target_project
+    issue = Issue.find(1)
+    issue.update_attribute(:fixed_version_id, 1)
+    assert issue.move_to(Project.find(5))
+    issue.reload
+    assert_equal 5, issue.project_id
+    # Cleared fixed_version
+    assert_equal nil, issue.fixed_version
+  end
+  
+  def test_move_to_another_project_should_keep_fixed_version_when_shared_systemwide
+    issue = Issue.find(1)
+    issue.update_attribute(:fixed_version_id, 7)
+    assert issue.move_to(Project.find(2))
+    issue.reload
+    assert_equal 2, issue.project_id
+    # Keep fixed_version
+    assert_equal 7, issue.fixed_version_id
   end
   
   def test_copy_to_the_same_project
@@ -226,6 +408,55 @@ class IssueTest < ActiveSupport::TestCase
     assert_equal Tracker.find(2), copy.tracker
     # Custom field #2 is not associated with target tracker
     assert_nil copy.custom_value_for(2)
+  end
+
+  context "#move_to" do
+    context "as a copy" do
+      setup do
+        @issue = Issue.find(1)
+        @copy = nil
+      end
+
+      should "allow assigned_to changes" do
+        @copy = @issue.move_to(Project.find(3), Tracker.find(2), {:copy => true, :attributes => {:assigned_to_id => 3}})
+        assert_equal 3, @copy.assigned_to_id
+      end
+
+      should "allow status changes" do
+        @copy = @issue.move_to(Project.find(3), Tracker.find(2), {:copy => true, :attributes => {:status_id => 2}})
+        assert_equal 2, @copy.status_id
+      end
+
+      should "allow start date changes" do
+        date = Date.today
+        @copy = @issue.move_to(Project.find(3), Tracker.find(2), {:copy => true, :attributes => {:start_date => date}})
+        assert_equal date, @copy.start_date
+      end
+
+      should "allow due date changes" do
+        date = Date.today
+        @copy = @issue.move_to(Project.find(3), Tracker.find(2), {:copy => true, :attributes => {:due_date => date}})
+
+        assert_equal date, @copy.due_date
+      end
+    end
+  end
+  
+  def test_recipients_should_not_include_users_that_cannot_view_the_issue
+    issue = Issue.find(12)
+    assert issue.recipients.include?(issue.author.mail)
+    # move the issue to a private project
+    copy  = issue.move_to(Project.find(5), Tracker.find(2), :copy => true)
+    # author is not a member of project anymore
+    assert !copy.recipients.include?(copy.author.mail)
+  end
+
+  def test_watcher_recipients_should_not_include_users_that_cannot_view_the_issue
+    user = User.find(3)
+    issue = Issue.find(9)
+    Watcher.create!(:user => user, :watchable => issue)
+    assert issue.watched_by?(user)
+    assert !issue.watcher_recipients.include?(user.mail)
   end
   
   def test_issue_destroy
@@ -297,5 +528,65 @@ class IssueTest < ActiveSupport::TestCase
       stale.save
     end
     assert ActionMailer::Base.deliveries.empty?
+  end
+
+  context "#done_ratio" do
+    setup do
+      @issue = Issue.find(1)
+      @issue_status = IssueStatus.find(1)
+      @issue_status.update_attribute(:default_done_ratio, 50)
+    end
+    
+    context "with Setting.issue_done_ratio using the issue_field" do
+      setup do
+        Setting.issue_done_ratio = 'issue_field'
+      end
+      
+      should "read the issue's field" do
+        assert_equal 0, @issue.done_ratio
+      end
+    end
+
+    context "with Setting.issue_done_ratio using the issue_status" do
+      setup do
+        Setting.issue_done_ratio = 'issue_status'
+      end
+      
+      should "read the Issue Status's default done ratio" do
+        assert_equal 50, @issue.done_ratio
+      end
+    end
+  end
+
+  context "#update_done_ratio_from_issue_status" do
+    setup do
+      @issue = Issue.find(1)
+      @issue_status = IssueStatus.find(1)
+      @issue_status.update_attribute(:default_done_ratio, 50)
+    end
+    
+    context "with Setting.issue_done_ratio using the issue_field" do
+      setup do
+        Setting.issue_done_ratio = 'issue_field'
+      end
+      
+      should "not change the issue" do
+        @issue.update_done_ratio_from_issue_status
+
+        assert_equal 0, @issue.done_ratio
+      end
+    end
+
+    context "with Setting.issue_done_ratio using the issue_status" do
+      setup do
+        Setting.issue_done_ratio = 'issue_status'
+      end
+      
+      should "not change the issue's done ratio" do
+        @issue.update_done_ratio_from_issue_status
+
+        assert_equal 50, @issue.done_ratio
+      end
+    end
   end
 end

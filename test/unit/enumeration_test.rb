@@ -18,14 +18,14 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class EnumerationTest < ActiveSupport::TestCase
-  fixtures :enumerations, :issues
+  fixtures :enumerations, :issues, :custom_fields, :custom_values
 
   def setup
   end
   
   def test_objects_count
     # low priority
-    assert_equal 5, Enumeration.find(4).objects_count
+    assert_equal 6, Enumeration.find(4).objects_count
     # urgent
     assert_equal 0, Enumeration.find(7).objects_count
   end
@@ -79,6 +79,33 @@ class EnumerationTest < ActiveSupport::TestCase
   def test_destroy_with_reassign
     Enumeration.find(4).destroy(Enumeration.find(6))
     assert_nil Issue.find(:first, :conditions => {:priority_id => 4})
-    assert_equal 5, Enumeration.find(6).objects_count
+    assert_equal 6, Enumeration.find(6).objects_count
+  end
+
+  def test_should_be_customizable
+    assert Enumeration.included_modules.include?(Redmine::Acts::Customizable::InstanceMethods)
+  end
+
+  def test_should_belong_to_a_project
+    association = Enumeration.reflect_on_association(:project)
+    assert association, "No Project association found"
+    assert_equal :belongs_to, association.macro
+  end
+
+  def test_should_act_as_tree
+    enumeration = Enumeration.find(4)
+
+    assert enumeration.respond_to?(:parent)
+    assert enumeration.respond_to?(:children)
+  end
+
+  def test_is_override
+    # Defaults to off
+    enumeration = Enumeration.find(4)
+    assert !enumeration.is_override?
+
+    # Setup as an override
+    enumeration.parent = Enumeration.find(5)
+    assert enumeration.is_override?
   end
 end

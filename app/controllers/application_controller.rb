@@ -23,16 +23,31 @@ class ApplicationController < ActionController::Base
 
   layout 'base'
   
+  # Remove broken cookie after upgrade from 0.8.x (#4292)
+  # See https://rails.lighthouseapp.com/projects/8994/tickets/3360
+  # TODO: remove it when Rails is fixed
+  before_filter :delete_broken_cookies
+  def delete_broken_cookies
+    if cookies['_redmine_session'] && cookies['_redmine_session'] !~ /--/
+      cookies.delete '_redmine_session'    
+      redirect_to home_path and return false
+    end
+  end
+  
   before_filter :user_setup, :check_if_login_required, :set_localization
   filter_parameter_logging :password
+  protect_from_forgery
   
+  rescue_from ActionController::InvalidAuthenticityToken, :with => :invalid_authenticity_token
+  
+  include Redmine::Search::Controller
   include Redmine::MenuManager::MenuController
   helper Redmine::MenuManager::MenuHelper
   
   REDMINE_SUPPORTED_SCM.each do |scm|
     require_dependency "repository/#{scm.underscore}"
   end
-  
+
   def user_setup
     # Check the settings cache for each request
     Setting.check_cache
@@ -59,12 +74,12 @@ class ApplicationController < ActionController::Base
   
   # Sets the logged in user
   def logged_user=(user)
+    reset_session
     if user && user.is_a?(User)
       User.current = user
       session[:user_id] = user.id
     else
       User.current = User.anonymous
-      session[:user_id] = nil
     end
   end
   
@@ -92,7 +107,13 @@ class ApplicationController < ActionController::Base
   
   def require_login
     if !User.current.logged?
-      redirect_to :controller => "account", :action => "login", :back_url => url_for(params)
+      # Extract only the basic url parameters on non-GET requests
+      if request.get?
+        url = url_for(params)
+      else
+        url = url_for(:controller => params[:controller], :action => params[:action], :id => params[:id], :project_id => params[:project_id])
+      end
+      redirect_to :controller => "account", :action => "login", :back_url => url
       return false
     end
     true
@@ -168,6 +189,10 @@ class ApplicationController < ActionController::Base
   def render_error(msg)
     flash.now[:error] = msg
     render :text => '', :layout => !request.xhr?, :status => 500
+  end
+  
+  def invalid_authenticity_token
+    render_error "Invalid form authenticity token."
   end
   
   def render_feed(items, options={})    

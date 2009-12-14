@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class NewsController < ApplicationController
+  default_search_scope :news
   before_filter :find_news, :except => [:new, :index, :preview]
   before_filter :find_project, :only => [:new, :preview]
   before_filter :authorize, :except => [:index, :preview]
@@ -25,7 +26,7 @@ class NewsController < ApplicationController
   def index
     @news_pages, @newss = paginate :news,
                                    :per_page => 10,
-                                   :conditions => (@project ? {:project_id => @project.id} : Project.visible_by(User.current)),
+                                   :conditions => Project.allowed_to_condition(User.current, :view_news, :project => @project),
                                    :include => [:author, :project],
                                    :order => "#{News.table_name}.created_on DESC"    
     respond_to do |format|

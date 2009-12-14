@@ -44,18 +44,45 @@ module ApplicationHelper
     link_to_remote(name, options, html_options) if authorize_for(url[:controller] || params[:controller], url[:action])
   end
 
-  # Display a link to user's account page
+  # Displays a link to user's account page if active
   def link_to_user(user, options={})
     if user.is_a?(User)
-      !user.anonymous? ? link_to(user.name(options[:format]), :controller => 'account', :action => 'show', :id => user) : 'Anonymous'
+      name = h(user.name(options[:format]))
+      if user.active?
+        link_to name, :controller => 'users', :action => 'show', :id => user
+      else
+        name
+      end
     else
-      user.to_s
+      h(user.to_s)
     end
   end
 
+  # Displays a link to +issue+ with its subject.
+  # Examples:
+  # 
+  #   link_to_issue(issue)                        # => Defect #6: This is the subject
+  #   link_to_issue(issue, :truncate => 6)        # => Defect #6: This i...
+  #   link_to_issue(issue, :subject => false)     # => Defect #6
+  #   link_to_issue(issue, :project => true)      # => Foo - Defect #6
+  #
   def link_to_issue(issue, options={})
-    options[:class] ||= issue.css_classes
-    link_to "#{issue.tracker.name} ##{issue.id}", {:controller => "issues", :action => "show", :id => issue}, options
+    title = nil
+    subject = nil
+    if options[:subject] == false
+      title = truncate(issue.subject, :length => 60)
+    else
+      subject = issue.subject
+      if options[:truncate]
+        subject = truncate(subject, :length => options[:truncate])
+      end
+    end
+    s = link_to "#{issue.tracker} ##{issue.id}", {:controller => "issues", :action => "show", :id => issue}, 
+                                                 :class => issue.css_classes,
+                                                 :title => title
+    s << ": #{h subject}" if subject
+    s = "#{h issue.project} - " + s if options[:project]
+    s
   end
 
   # Generates a link to an attachment.
@@ -101,6 +128,14 @@ module ApplicationHelper
     h(truncate(text.to_s, :length => 120).gsub(%r{[\r\n]*<(pre|code)>.*$}m, '...')).gsub(/[\r\n]+/, "<br />")
   end
 
+  def format_version_name(version)
+    if version.project == @project
+    	h(version)
+    else
+      h("#{version.project} - #{version}")
+    end
+  end
+  
   def due_date_distance_in_words(date)
     if date
       l((date < Date.today ? :label_roadmap_overdue : :label_roadmap_due_in), distance_of_date_in_words(Date.today, date))
@@ -147,9 +182,9 @@ module ApplicationHelper
     projects = User.current.projects.all
     if projects.any?
       s = '<select onchange="if (this.value != \'\') { window.location = this.value; }">' +
-            "<option value='' selected='selected'>#{ l(:label_jump_to_a_project) }</option>" +
+            "<option value=''>#{ l(:label_jump_to_a_project) }</option>" +
             '<option value="" disabled="disabled">---</option>'
-      s << project_tree_options_for_select(projects) do |p|
+      s << project_tree_options_for_select(projects, :selected => @project) do |p|
         { :value => url_for(:controller => 'projects', :action => 'show', :id => p, :jump => current_menu_item) }
       end
       s << '</select>'
@@ -206,7 +241,7 @@ module ApplicationHelper
   
   def principals_check_box_tags(name, principals)
     s = ''
-    principals.each do |principal|
+    principals.sort.each do |principal|
       s << "<label>#{ check_box_tag name, principal.id, false } #{h principal}</label>\n"
     end
     s 
@@ -214,7 +249,7 @@ module ApplicationHelper
 
   # Truncates and returns the string as a single line
   def truncate_single_line(string, *args)
-    truncate(string, *args).gsub(%r{[\r\n]+}m, ' ')
+    truncate(string.to_s, *args).gsub(%r{[\r\n]+}m, ' ')
   end
 
   def html_hours(text)
@@ -222,8 +257,7 @@ module ApplicationHelper
   end
 
   def authoring(created, author, options={})
-    author_tag = (author.is_a?(User) && !author.anonymous?) ? link_to(h(author), :controller => 'account', :action => 'show', :id => author) : h(author || 'Anonymous')
-    l(options[:label] || :label_added_time_by, :author => author_tag, :age => time_tag(created))
+    l(options[:label] || :label_added_time_by, :author => link_to_user(author), :age => time_tag(created))
   end
   
   def time_tag(time)
@@ -330,7 +364,7 @@ module ApplicationHelper
       title << @project.name if @project
       title += @html_title if @html_title
       title << Setting.app_title
-      title.compact.join(' - ')
+      title.select {|t| !t.blank? }.join(' - ')
     else
       @html_title ||= []
       @html_title += args
@@ -476,11 +510,10 @@ module ApplicationHelper
           oid = oid.to_i
           case prefix
           when nil
-            if issue = Issue.find_by_id(oid, :include => [:project, :status], :conditions => Project.visible_by(User.current))
+            if issue = Issue.visible.find_by_id(oid, :include => :status)
               link = link_to("##{oid}", {:only_path => only_path, :controller => 'issues', :action => 'show', :id => oid},
-                                        :class => (issue.closed? ? 'issue closed' : 'issue'),
+                                        :class => issue.css_classes,
                                         :title => "#{truncate(issue.subject, :length => 100)} (#{issue.status.name})")
-              link = content_tag('del', link) if issue.closed?
             end
           when 'document'
             if document = Document.find_by_id(oid, :include => [:project], :conditions => Project.visible_by(User.current))
@@ -586,15 +619,16 @@ module ApplicationHelper
 
   def progress_bar(pcts, options={})
     pcts = [pcts, pcts] unless pcts.is_a?(Array)
+    pcts = pcts.collect(&:round)
     pcts[1] = pcts[1] - pcts[0]
     pcts << (100 - pcts[1] - pcts[0])
     width = options[:width] || '100px;'
     legend = options[:legend] || ''
     content_tag('table',
       content_tag('tr',
-        (pcts[0] > 0 ? content_tag('td', '', :style => "width: #{pcts[0].floor}%;", :class => 'closed') : '') +
-        (pcts[1] > 0 ? content_tag('td', '', :style => "width: #{pcts[1].floor}%;", :class => 'done') : '') +
-        (pcts[2] > 0 ? content_tag('td', '', :style => "width: #{pcts[2].floor}%;", :class => 'todo') : '')
+        (pcts[0] > 0 ? content_tag('td', '', :style => "width: #{pcts[0]}%;", :class => 'closed') : '') +
+        (pcts[1] > 0 ? content_tag('td', '', :style => "width: #{pcts[1]}%;", :class => 'done') : '') +
+        (pcts[2] > 0 ? content_tag('td', '', :style => "width: #{pcts[2]}%;", :class => 'todo') : '')
       ), :class => 'progress', :style => "width: #{width};") +
       content_tag('p', legend, :class => 'pourcent')
   end
@@ -625,8 +659,18 @@ module ApplicationHelper
     unless @calendar_headers_tags_included
       @calendar_headers_tags_included = true
       content_for :header_tags do
+        start_of_week = case Setting.start_of_week.to_i
+        when 1
+          'Calendar._FD = 1;' # Monday
+        when 7
+          'Calendar._FD = 0;' # Sunday
+        else
+          '' # use language
+        end
+        
         javascript_include_tag('calendar/calendar') +
         javascript_include_tag("calendar/lang/calendar-#{current_language.to_s.downcase}.js") +
+        javascript_tag(start_of_week) +  
         javascript_include_tag('calendar/calendar-setup') +
         stylesheet_link_tag('calendar')
       end
@@ -647,7 +691,7 @@ module ApplicationHelper
   # +user+ can be a User or a string that will be scanned for an email address (eg. 'joe <joe@foo.bar>')
   def avatar(user, options = { })
     if Setting.gravatar_enabled?
-      options.merge!({:ssl => Setting.protocol == 'https'})
+      options.merge!({:ssl => Setting.protocol == 'https', :default => Setting.gravatar_default})
       email = nil
       if user.respond_to?(:mail)
         email = user.mail

@@ -206,7 +206,6 @@ sl:
   field_homepage: Domača stran
   field_is_public: Javno
   field_parent: Podprojekt projekta
-  field_is_in_chlog: Zahtevki prikazani v zapisu sprememb
   field_is_in_roadmap: Zahtevki prikazani na zemljevidu
   field_login: Prijava
   field_mail_notification: E-poštna oznanila
@@ -453,7 +452,6 @@ sl:
   label_news_latest: Zadnje novice
   label_news_view_all: Poglej vse novice
   label_news_added: Dodane novice
-  label_change_log: Zapisnik spremeb
   label_settings: Nastavitve
   label_overview: Pregled
   label_version: Verzija
@@ -762,7 +760,7 @@ sl:
   default_tracker_feature: Funkcija
   default_tracker_support: Podpora
   default_issue_status_new: Nov
-  default_issue_status_assigned: Dodeljen
+  default_issue_status_in_progress: In Progress
   default_issue_status_resolved: Rešen
   default_issue_status_feedback: Povratna informacija
   default_issue_status_closed: Zaključen
@@ -826,3 +824,35 @@ sl:
   label_group_new: New group
   label_time_entry_plural: Spent time
   text_journal_added: "{{label}} {{value}} added"
+  field_active: Active
+  enumeration_system_activity: System Activity
+  permission_delete_issue_watchers: Delete watchers
+  version_status_closed: closed
+  version_status_locked: locked
+  version_status_open: open
+  error_can_not_reopen_issue_on_closed_version: An issue assigned to a closed version can not be reopened
+  label_user_anonymous: Anonymous
+  button_move_and_follow: Move and follow
+  setting_default_projects_modules: Default enabled modules for new projects
+  setting_gravatar_default: Default Gravatar image
+  field_sharing: Sharing
+  label_version_sharing_hierarchy: With project hierarchy
+  label_version_sharing_system: With all projects
+  label_version_sharing_descendants: With subprojects
+  label_version_sharing_tree: With project tree
+  label_version_sharing_none: Not shared
+  error_can_not_archive_project: This project can not be archived
+  button_duplicate: Duplicate
+  button_copy_and_follow: Copy and follow
+  label_copy_source: Source
+  setting_issue_done_ratio: Calculate the issue done ratio with
+  setting_issue_done_ratio_issue_status: Use the issue status
+  error_issue_done_ratios_not_updated: Issue done ratios not updated.
+  error_workflow_copy_target: Please select target tracker(s) and role(s)
+  setting_issue_done_ratio_issue_field: Use the issue field
+  label_copy_same_as_target: Same as target
+  label_copy_target: Target
+  notice_issue_done_ratios_updated: Issue done ratios updated.
+  error_workflow_copy_source: Please select a source tracker or role
+  label_update_issue_done_ratios: Update issue done ratios
+  setting_start_of_week: Start calendars on
