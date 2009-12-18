@@ -37,7 +37,7 @@ namespace :db do
     desc 'Migrate plugins to current status.'
     task :plugins => :environment do
       Engines.plugins.each do |plugin|
-        next unless File.exists? plugin.migration_directory
+        next unless (plugin.respond_to?('migration_directory') and File.exists? plugin.migration_directory)
         puts "Migrating plugin #{plugin.name} ..."
         plugin.migrate
       end
