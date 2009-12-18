@@ -330,6 +330,7 @@ en:
   permission_manage_members: Manage members
   permission_manage_versions: Manage versions
   permission_manage_categories: Manage issue categories
+  permission_view_issues: View Issues
   permission_add_issues: Add issues
   permission_edit_issues: Edit issues
   permission_manage_issue_relations: Manage issue relations
@@ -726,6 +727,7 @@ en:
   label_copy_source: Source
   label_copy_target: Target
   label_copy_same_as_target: Same as target
+  label_display_used_statuses_only: Only display statuses that are used by this tracker
   
   button_login: Login
   button_submit: Submit

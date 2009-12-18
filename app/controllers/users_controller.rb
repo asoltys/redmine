@@ -16,6 +16,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class UsersController < ApplicationController
+  layout 'admin'
+  
   before_filter :require_admin, :except => :show
 
   helper :sort
@@ -60,9 +62,11 @@ class UsersController < ApplicationController
     @events_by_day = events.group_by(&:event_date)
     
     if @user != User.current && !User.current.admin? && @memberships.empty? && events.empty?
-      render_404 and return
+      render_404
+      return
     end
-    
+    render :layout => 'base'
+
   rescue ActiveRecord::RecordNotFound
     render_404
   end

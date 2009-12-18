@@ -350,6 +350,7 @@ fr:
   permission_manage_members: Gérer les members
   permission_manage_versions: Gérer les versions
   permission_manage_categories: Gérer les catégories de demandes
+  permission_view_issues: Voir les demandes
   permission_add_issues: Créer des demandes
   permission_edit_issues: Modifier les demandes
   permission_manage_issue_relations: Gérer les relations
@@ -741,6 +742,7 @@ fr:
   label_copy_target: Cible
   label_copy_same_as_target: Comme la cible
   label_update_issue_done_ratios: Mettre à jour l'avancement des demandes
+  label_display_used_statuses_only: N'afficher que les statuts utilisés dans ce tracker
   
   button_login: Connexion
   button_submit: Soumettre
