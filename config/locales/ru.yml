@@ -957,16 +957,33 @@ ru:
   button_duplicate: Дублировать
   button_copy_and_follow: Копировать и продолжить
   label_copy_source: Источник
-  setting_issue_done_ratio: Calculate the issue done ratio with
-  setting_issue_done_ratio_issue_status: Use the issue status
-  error_issue_done_ratios_not_updated: Issue done ratios not updated.
+  setting_issue_done_ratio:  Рассчитывать готовность задачи с помощью поля
+  setting_issue_done_ratio_issue_status: Статус задачи
+  error_issue_done_ratios_not_updated: Параметр готовность задач не обновлен
   error_workflow_copy_target: Выберите целевые трекеры и роли
-  setting_issue_done_ratio_issue_field: Use the issue field
+  setting_issue_done_ratio_issue_field: Готовность задачи
   label_copy_same_as_target: То же, что и у цели
   label_copy_target: Цель
-  notice_issue_done_ratios_updated: Issue done ratios updated.
+  notice_issue_done_ratios_updated: Параметр готовность задач обновлен.
   error_workflow_copy_source: Выберите исходный трекер или роль
-  label_update_issue_done_ratios: Update issue done ratios
-  setting_start_of_week: Start calendars on
-  permission_view_issues: View Issues
-  label_display_used_statuses_only: Only display statuses that are used by this tracker
+  label_update_issue_done_ratios: Обновить готовность задач
+  setting_start_of_week: День начала недели
+  label_api_access_key: Ключ доступа к API
+  text_line_separated: Разрешено несколько значений (по одному значению в строку).
+  label_revision_id: Ревизия {{value}}
+  permission_view_issues: Показать проблемы
+  label_display_used_statuses_only: Отображать только те статусы, которые используются в этом трекере
+  label_api_access_key_created_on: Ключ доступ к API был создан {{value}} назад
+  label_feeds_access_key: Ключ доступа к RSS
+  notice_api_access_key_reseted: Ваш ключ доступа к API был сброшен.
+  setting_rest_api_enabled: Включить веб-сервис REST
+  button_show: Показать
+  label_missing_api_access_key: Отсутствует ключ доступа к API
+  label_missing_feeds_access_key: Отсутствует ключ доступа к RSS
+  setting_mail_handler_body_delimiters: Урезать письмо после одной из этих строк
+  permission_add_subprojects: Создать подпроекты
+  label_subproject_new: Новый подпроект
+  text_own_membership_delete_confirmation: |-
+    Вы собираетесь удалить некоторые или все права, из-за чего могут пропасть права на редактирование этого проекта.
+    Продолжить?
+  label_close_versions: Закрыть завершенные версии
