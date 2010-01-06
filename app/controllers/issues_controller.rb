@@ -150,6 +150,7 @@ class IssuesController < ApplicationController
       requested_status = IssueStatus.find_by_id(params[:issue][:status_id])
       # Check that the user is allowed to apply the requested status
       @issue.status = (@allowed_statuses.include? requested_status) ? requested_status : default_status
+      call_hook(:controller_issues_new_before_save, { :params => params, :issue => @issue })
       if @issue.save
         attach_files(@issue, params[:attachments])
         flash[:notice] = l(:notice_successful_create)
@@ -272,7 +273,7 @@ class IssuesController < ApplicationController
       return
     end
     @available_statuses = Workflow.available_statuses(@project)
-    @custom_fields = @project.issue_custom_fields.select {|f| f.field_format == 'list'}
+    @custom_fields = @project.all_issue_custom_fields
   end
 
   def move
