@@ -214,10 +214,14 @@ module Redmine
       class Entries < Array
         def sort_by_name
           sort {|x,y| 
-            if x.kind == y.kind
+            if (x.kind == y.kind) || (x.kind == 'dir' && y.kind == 'link') || (x.kind == 'link' && y.kind == 'dir')
               x.name.to_s <=> y.name.to_s
             else
-              x.kind <=> y.kind
+              if (x.kind == 'dir' || x.kind == 'link') && y.kind == 'file'
+                -1
+              else
+                1
+              end
             end
           }   
         end
@@ -250,7 +254,7 @@ module Redmine
         end
         
         def is_dir?
-          'dir' == self.kind
+          'dir' == self.kind || 'link' == self.kind
         end
         
         def is_text?

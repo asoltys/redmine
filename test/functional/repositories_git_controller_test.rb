@@ -50,13 +50,27 @@ class RepositoriesGitControllerTest < ActionController::TestCase
       assert_response :success
       assert_template 'show'
       assert_not_nil assigns(:entries)
-      assert_equal 6, assigns(:entries).size
+      assert_equal 8, assigns(:entries).size
       assert assigns(:entries).detect {|e| e.name == 'images' && e.kind == 'dir'}
+      assert assigns(:entries).detect {|e| e.name == 'module' && e.kind == 'link'}
       assert assigns(:entries).detect {|e| e.name == 'sources' && e.kind == 'dir'}
+      assert assigns(:entries).detect {|e| e.name == '.gitmodules' && e.kind == 'file'}
       assert assigns(:entries).detect {|e| e.name == 'README' && e.kind == 'file'}
       assert assigns(:entries).detect {|e| e.name == 'copied_README' && e.kind == 'file'}
       assert assigns(:entries).detect {|e| e.name == 'new_file.txt' && e.kind == 'file'}
       assert assigns(:entries).detect {|e| e.name == 'renamed_test.txt' && e.kind == 'file'}
+
+      assert_tag :tag => 'a', :content => /images/, :attributes => {
+        :class => /icon-folder/
+      }
+
+      assert_tag :tag => 'a', :content => /module/, :attributes => {
+        :class => /icon-link/
+      }
+
+      assert_tag :tag => 'a', :content => /README/, :attributes => {
+        :class => /icon-file/
+      }
     end
 
     def test_browse_branch
@@ -89,6 +103,12 @@ class RepositoriesGitControllerTest < ActionController::TestCase
       assert_template 'show'
       assert_not_nil assigns(:entries)
       assert_equal ['delete.png'], assigns(:entries).collect(&:name)
+    end
+
+    def test_browse_submodule
+      get :entry, :id => 3, :path => ['module']
+      assert_response :success
+      assert_template 'submodule'
     end
 
     def test_changes

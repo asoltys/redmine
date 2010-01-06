@@ -118,6 +118,11 @@ module RepositoriesHelper
     end
     str
   end
+
+  def css_class_of(entry)
+    entry.kind == 'dir' ? kind = 'folder' : kind = entry.kind
+    rt = 'icon icon-' + kind
+  end
   
   def repository_field_tags(form, repository)    
     method = repository.class.name.demodulize.underscore + "_field_tags"
