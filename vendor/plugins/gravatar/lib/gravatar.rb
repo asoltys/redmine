@@ -59,11 +59,7 @@ module GravatarHelper
     # a secure URL will be used instead. This is required when the gravatar is to be 
     # displayed on a HTTPS site.
     def gravatar_api_url(hash, ssl=false)
-      if ssl
-        "https://secure.gravatar.com/avatar/#{hash}"
-      else
-        "http://www.gravatar.com/avatar/#{hash}"
-      end
+      "https://secure.gravatar.com/avatar/#{hash}"
     end
 
     # Return the gravatar URL for the given email address.
