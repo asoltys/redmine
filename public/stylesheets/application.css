@@ -217,8 +217,8 @@ div.square {
 .contextual input, .contextual select {font-size:0.9em;}
 .message .contextual { margin-top: 0; }
 
-.splitcontentleft{float:left; width:49%;}
-.splitcontentright{float:right; width:49%;}
+.splitcontentleft{float:left; width:45%;}
+.splitcontentright{float:right; width:45%;}
 form {display: inline;}
 input, select {vertical-align: middle; margin-top: 1px; margin-bottom: 1px;}
 fieldset {border: 1px solid #e4e4e4; margin:0;}
