@@ -20,6 +20,7 @@
 </head>
 <body>
 <div id="wrapper">
+<div id="wrapper2">
 <div id="top-menu">
     <div id="account">
         <%= render_menu :account_menu -%>
@@ -40,9 +41,11 @@
     
     <h1><%= page_header_title %></h1>
     
+    <% if display_main_menu?(@project) %>
     <div id="main-menu">
         <%= render_main_menu(@project) %>
     </div>
+    <% end %>
 </div>
 
 <%= tag('div', {:id => 'main', :class => (has_content?(:sidebar) ? '' : 'nosidebar')}, true) %>
@@ -62,7 +65,10 @@
 <div id="ajax-indicator" style="display:none;"><span><%= l(:label_loading) %></span></div>
 	
 <div id="footer">
+  <div class="bgl"><div class="bgr">
     Powered by <%= link_to Redmine::Info.app_name, Redmine::Info.url %> &copy; 2006-2010 Jean-Philippe Lang
+  </div></div>
+</div>
 </div>
 </div>
 <%= call_hook :view_layouts_base_body_bottom %>

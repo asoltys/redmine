@@ -22,8 +22,13 @@ class MailerTest < ActiveSupport::TestCase
   include ActionController::Assertions::SelectorAssertions
   fixtures :projects, :enabled_modules, :issues, :users, :members, :member_roles, :roles, :documents, :attachments, :news, :tokens, :journals, :journal_details, :changesets, :trackers, :issue_statuses, :enumerations, :messages, :boards, :repositories
   
-  def test_generated_links_in_emails
+  def setup
     ActionMailer::Base.deliveries.clear
+    Setting.host_name = 'mydomain.foo'
+    Setting.protocol = 'http'
+  end
+  
+  def test_generated_links_in_emails
     Setting.host_name = 'mydomain.foo'
     Setting.protocol = 'https'
     
@@ -45,7 +50,6 @@ class MailerTest < ActiveSupport::TestCase
   
   def test_generated_links_with_prefix
     relative_url_root = Redmine::Utils.relative_url_root
-    ActionMailer::Base.deliveries.clear
     Setting.host_name = 'mydomain.foo/rdm'
     Setting.protocol = 'http'
     Redmine::Utils.relative_url_root = '/rdm'
@@ -71,7 +75,6 @@ class MailerTest < ActiveSupport::TestCase
   
   def test_generated_links_with_prefix_and_no_relative_url_root
     relative_url_root = Redmine::Utils.relative_url_root
-    ActionMailer::Base.deliveries.clear
     Setting.host_name = 'mydomain.foo/rdm'
     Setting.protocol = 'http'
     Redmine::Utils.relative_url_root = nil
@@ -96,7 +99,6 @@ class MailerTest < ActiveSupport::TestCase
   end
   
   def test_email_headers
-    ActionMailer::Base.deliveries.clear
     issue = Issue.find(1)
     Mailer.deliver_issue_add(issue)
     mail = ActionMailer::Base.deliveries.last
@@ -123,9 +125,38 @@ class MailerTest < ActiveSupport::TestCase
     assert_equal 2, mail.parts.size
     assert mail.encoded.include?('href')
   end
+  
+  def test_mail_from_with_phrase
+    with_settings :mail_from => 'Redmine app <redmine@example.net>' do
+      Mailer.deliver_test(User.find(1))
+    end
+    mail = ActionMailer::Base.deliveries.last
+    assert_not_nil mail
+    assert_equal 'Redmine app', mail.from_addrs.first.name
+  end
+  
+  def test_should_not_send_email_without_recipient
+    news = News.find(:first)
+    user = news.author
+    # Remove members except news author
+    news.project.memberships.each {|m| m.destroy unless m.user == user}
+    
+    user.pref[:no_self_notified] = false
+    user.pref.save
+    User.current = user
+    Mailer.deliver_news_added(news.reload)
+    assert_equal 1, last_email.bcc.size
+
+    # nobody to notify
+    user.pref[:no_self_notified] = true
+    user.pref.save
+    User.current = user
+    ActionMailer::Base.deliveries.clear
+    Mailer.deliver_news_added(news.reload)
+    assert ActionMailer::Base.deliveries.empty?
+  end
 
   def test_issue_add_message_id
-    ActionMailer::Base.deliveries.clear
     issue = Issue.find(1)
     Mailer.deliver_issue_add(issue)
     mail = ActionMailer::Base.deliveries.last
@@ -135,7 +166,6 @@ class MailerTest < ActiveSupport::TestCase
   end
   
   def test_issue_edit_message_id
-    ActionMailer::Base.deliveries.clear
     journal = Journal.find(1)
     Mailer.deliver_issue_edit(journal)
     mail = ActionMailer::Base.deliveries.last
@@ -145,23 +175,29 @@ class MailerTest < ActiveSupport::TestCase
   end
   
   def test_message_posted_message_id
-    ActionMailer::Base.deliveries.clear
     message = Message.find(1)
     Mailer.deliver_message_posted(message)
     mail = ActionMailer::Base.deliveries.last
     assert_not_nil mail
     assert_equal Mailer.message_id_for(message), mail.message_id
     assert_nil mail.references
+    assert_select_email do
+      # link to the message
+      assert_select "a[href=?]", "http://mydomain.foo/boards/#{message.board.id}/topics/#{message.id}", :text => message.subject
+    end
   end
   
   def test_reply_posted_message_id
-    ActionMailer::Base.deliveries.clear
     message = Message.find(3)
     Mailer.deliver_message_posted(message)
     mail = ActionMailer::Base.deliveries.last
     assert_not_nil mail
     assert_equal Mailer.message_id_for(message), mail.message_id
     assert_equal Mailer.message_id_for(message.parent), mail.references.first.to_s
+    assert_select_email do
+      # link to the reply
+      assert_select "a[href=?]", "http://mydomain.foo/boards/#{message.board.id}/topics/#{message.root.id}?r=#{message.id}#message-#{message.id}", :text => message.subject
+    end
   end
   
   context("#issue_add") do
@@ -237,6 +273,20 @@ class MailerTest < ActiveSupport::TestCase
     end
   end
   
+  def test_version_file_added
+    attachements = [ Attachment.find_by_container_type('Version') ]
+    assert Mailer.deliver_attachments_added(attachements)
+    assert_not_nil last_email.bcc
+    assert last_email.bcc.any?
+  end
+  
+  def test_project_file_added
+    attachements = [ Attachment.find_by_container_type('Project') ]
+    assert Mailer.deliver_attachments_added(attachements)
+    assert_not_nil last_email.bcc
+    assert last_email.bcc.any?
+  end
+  
   def test_news_added
     news = News.find(:first)
     valid_languages.each do |lang|
@@ -256,7 +306,7 @@ class MailerTest < ActiveSupport::TestCase
   end
   
   def test_account_information
-    user = User.find(:first)
+    user = User.find(2)
     valid_languages.each do |lang|
       user.update_attribute :language, lang.to_s
       user.reload
@@ -288,8 +338,15 @@ class MailerTest < ActiveSupport::TestCase
     end
   end
   
+  def test_test
+    user = User.find(1)
+    valid_languages.each do |lang|
+      user.update_attribute :language, lang.to_s
+      assert Mailer.deliver_test(user)
+    end
+  end
+  
   def test_reminders
-    ActionMailer::Base.deliveries.clear
     Mailer.reminders(:days => 42)
     assert_equal 1, ActionMailer::Base.deliveries.size
     mail = ActionMailer::Base.deliveries.last
@@ -315,5 +372,14 @@ class MailerTest < ActiveSupport::TestCase
     assert mail.body.include?('Votre compte')
     
     assert_equal :it, current_language
+  end
+  
+  def test_with_deliveries_off
+    Mailer.with_deliveries false do
+      Mailer.deliver_test(User.find(1))
+    end
+    assert ActionMailer::Base.deliveries.empty?
+    # should restore perform_deliveries
+    assert ActionMailer::Base.perform_deliveries
   end
 end

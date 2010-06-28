@@ -46,7 +46,7 @@ class ApplicationController < ActionController::Base
   include Redmine::MenuManager::MenuController
   helper Redmine::MenuManager::MenuHelper
   
-  REDMINE_SUPPORTED_SCM.each do |scm|
+  Redmine::Scm::Base.all.each do |scm|
     require_dependency "repository/#{scm.underscore}"
   end
 
@@ -108,8 +108,9 @@ class ApplicationController < ActionController::Base
       lang = find_language(User.current.language)
     end
     if lang.nil? && request.env['HTTP_ACCEPT_LANGUAGE']
-      accept_lang = parse_qvalues(request.env['HTTP_ACCEPT_LANGUAGE']).first.downcase
+      accept_lang = parse_qvalues(request.env['HTTP_ACCEPT_LANGUAGE']).first
       if !accept_lang.blank?
+        accept_lang = accept_lang.downcase
         lang = find_language(accept_lang) || find_language(accept_lang.split('-').first)
       end
     end
@@ -128,8 +129,8 @@ class ApplicationController < ActionController::Base
       respond_to do |format|
         format.html { redirect_to :controller => "account", :action => "login", :back_url => url }
         format.atom { redirect_to :controller => "account", :action => "login", :back_url => url }
-        format.xml { head :unauthorized }
-        format.json { head :unauthorized }
+        format.xml  { head :unauthorized, 'WWW-Authenticate' => 'Basic realm="Redmine API"' }
+        format.json { head :unauthorized, 'WWW-Authenticate' => 'Basic realm="Redmine API"' }
       end
       return false
     end
@@ -159,7 +160,47 @@ class ApplicationController < ActionController::Base
   def authorize_global(ctrl = params[:controller], action = params[:action], global = true)
     authorize(ctrl, action, global)
   end
-  
+
+  # Find project of id params[:id]
+  def find_project
+    @project = Project.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
+  # Find a project based on params[:project_id]
+  # TODO: some subclasses override this, see about merging their logic
+  def find_optional_project
+    @project = Project.find(params[:project_id]) unless params[:project_id].blank?
+    allowed = User.current.allowed_to?({:controller => params[:controller], :action => params[:action]}, @project, :global => true)
+    allowed ? true : deny_access
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
+  # Finds and sets @project based on @object.project
+  def find_project_from_association
+    render_404 unless @object.present?
+    
+    @project = @object.project
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
+  def find_model_object
+    model = self.class.read_inheritable_attribute('model_object')
+    if model
+      @object = model.find(params[:id])
+      self.instance_variable_set('@' + controller_name.singularize, @object) if @object
+    end
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
+  def self.model_object(model)
+    write_inheritable_attribute('model_object', model)
+  end
+    
   # make sure that the user is a member of the project (or admin) if project is private
   # used as a before_filter for actions that do not require any particular permission on the project
   def check_project_privacy
@@ -250,27 +291,6 @@ class ApplicationController < ActionController::Base
     self.class.read_inheritable_attribute('accept_key_auth_actions') || []
   end
   
-  # TODO: move to model
-  def attach_files(obj, attachments)
-    attached = []
-    unsaved = []
-    if attachments && attachments.is_a?(Hash)
-      attachments.each_value do |attachment|
-        file = attachment['file']
-        next unless file && file.size > 0
-        a = Attachment.create(:container => obj, 
-                              :file => file,
-                              :description => attachment['description'].to_s.strip,
-                              :author => User.current)
-        a.new_record? ? (unsaved << a) : (attached << a)
-      end
-      if unsaved.any?
-        flash[:warning] = l(:warning_attachments_not_saved, unsaved.size)
-      end
-    end
-    attached
-  end
-
   # Returns the number of objects that should be displayed
   # on the paginated list
   def per_page_option
@@ -315,4 +335,25 @@ class ApplicationController < ActionController::Base
   def api_request?
     %w(xml json).include? params[:format]
   end
+
+  # Renders a warning flash if obj has unsaved attachments
+  def render_attachment_warning_if_needed(obj)
+    flash[:warning] = l(:warning_attachments_not_saved, obj.unsaved_attachments.size) if obj.unsaved_attachments.present?
+  end
+
+  # Rescues an invalid query statement. Just in case...
+  def query_statement_invalid(exception)
+    logger.error "Query::StatementInvalid: #{exception.message}" if logger
+    session.delete(:query)
+    sort_clear if respond_to?(:sort_clear)
+    render_error "An error occurred while executing the query and has been logged. Please report this error to your Redmine administrator."
+  end
+
+  # Converts the errors on an ActiveRecord object into a common JSON format
+  def object_errors_to_json(object)
+    object.errors.collect do |attribute, error|
+      { attribute => error }
+    end.to_json
+  end
+  
 end

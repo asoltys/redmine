@@ -33,21 +33,22 @@ module Redmine
         end
 
         def branches
-          branches = []
+          return @branches if @branches
+          @branches = []
           cmd = "#{GIT_BIN} --git-dir #{target('')} branch"
           shellout(cmd) do |io|
             io.each_line do |line|
-              branches << line.match('\s*\*?\s*(.*)$')[1]
+              @branches << line.match('\s*\*?\s*(.*)$')[1]
             end
           end
-          branches.sort!
+          @branches.sort!
         end
 
         def tags
-          tags = []
+          return @tags if @tags
           cmd = "#{GIT_BIN} --git-dir #{target('')} tag"
           shellout(cmd) do |io|
-            io.readlines.sort!.map{|t| t.strip}
+            @tags = io.readlines.sort!.map{|t| t.strip}
           end
         end
 
@@ -110,20 +111,16 @@ module Redmine
           end
         end
 
-        def num_revisions
-          cmd = "#{GIT_BIN} --git-dir #{target('')} log --all --pretty=format:'' | wc -l"
-          shellout(cmd) {|io| io.gets.chomp.to_i + 1}
-        end
-
         def revisions(path, identifier_from, identifier_to, options={})
           revisions = Revisions.new
 
-          cmd = "#{GIT_BIN} --git-dir #{target('')} log --find-copies-harder --raw --date=iso --pretty=fuller"
+          cmd = "#{GIT_BIN} --git-dir #{target('')} log --raw --date=iso --pretty=fuller"
           cmd << " --reverse" if options[:reverse]
           cmd << " --all" if options[:all]
           cmd << " -n #{options[:limit]} " if options[:limit]
           cmd << " #{shell_quote(identifier_from + '..')} " if identifier_from
           cmd << " #{shell_quote identifier_to} " if identifier_to
+          cmd << " --since=#{shell_quote(options[:since].strftime("%Y-%m-%d %H:%M:%S"))}" if options[:since]
           cmd << " -- #{path}" if path && !path.empty?
 
           shellout(cmd) do |io|
@@ -230,16 +227,26 @@ module Redmine
         
         def annotate(path, identifier=nil)
           identifier = 'HEAD' if identifier.blank?
-          cmd = "#{GIT_BIN} --git-dir #{target('')} blame -l #{shell_quote identifier} -- #{shell_quote path}"
+          cmd = "#{GIT_BIN} --git-dir #{target('')} blame -p #{shell_quote identifier} -- #{shell_quote path}"
           blame = Annotate.new
           content = nil
           shellout(cmd) { |io| io.binmode; content = io.read }
           return nil if $? && $?.exitstatus != 0
           # git annotates binary files
           return nil if content.is_binary_data?
+          identifier = ''
+          # git shows commit author on the first occurrence only
+          authors_by_commit = {}
           content.split("\n").each do |line|
-            next unless line =~ /([0-9a-f]{39,40})\s\((\w*)[^\)]*\)(.*)/
-            blame.add_line($3.rstrip, Revision.new(:identifier => $1, :author => $2.strip))
+            if line =~ /^([0-9a-f]{39,40})\s.*/
+              identifier = $1
+            elsif line =~ /^author (.+)/
+              authors_by_commit[identifier] = $1.strip
+            elsif line =~ /^\t(.*)/
+              blame.add_line($1, Revision.new(:identifier => identifier, :author => authors_by_commit[identifier]))
+              identifier = ''
+              author = ''
+            end
           end
           blame
         end

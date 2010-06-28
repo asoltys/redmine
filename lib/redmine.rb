@@ -1,12 +1,15 @@
 require 'redmine/access_control'
 require 'redmine/menu_manager'
 require 'redmine/activity'
+require 'redmine/search'
+require 'redmine/custom_field_format'
 require 'redmine/mime_type'
 require 'redmine/core_ext'
 require 'redmine/themes'
 require 'redmine/hook'
 require 'redmine/plugin'
 require 'redmine/wiki_formatting'
+require 'redmine/scm/base'
 
 begin
   require_library_or_gem 'RMagick' unless Object.const_defined?(:Magick)
@@ -21,7 +24,23 @@ else
   FCSV = CSV
 end
 
-REDMINE_SUPPORTED_SCM = %w( Subversion Darcs Mercurial Cvs Bazaar Git Filesystem )
+Redmine::Scm::Base.add "Subversion"
+Redmine::Scm::Base.add "Darcs"
+Redmine::Scm::Base.add "Mercurial"
+Redmine::Scm::Base.add "Cvs"
+Redmine::Scm::Base.add "Bazaar"
+Redmine::Scm::Base.add "Git"
+Redmine::Scm::Base.add "Filesystem"
+
+Redmine::CustomFieldFormat.map do |fields|
+  fields.register Redmine::CustomFieldFormat.new('string', :label => :label_string, :order => 1)
+  fields.register Redmine::CustomFieldFormat.new('text', :label => :label_text, :order => 2)
+  fields.register Redmine::CustomFieldFormat.new('int', :label => :label_integer, :order => 3)
+  fields.register Redmine::CustomFieldFormat.new('float', :label => :label_float, :order => 4)
+  fields.register Redmine::CustomFieldFormat.new('list', :label => :label_list, :order => 5)
+  fields.register Redmine::CustomFieldFormat.new('date', :label => :label_date, :order => 6)
+  fields.register Redmine::CustomFieldFormat.new('bool', :label => :label_boolean, :order => 7)
+end
 
 # Permissions
 Redmine::AccessControl.map do |map|
@@ -31,22 +50,23 @@ Redmine::AccessControl.map do |map|
   map.permission :edit_project, {:projects => [:settings, :edit]}, :require => :member
   map.permission :select_project_modules, {:projects => :modules}, :require => :member
   map.permission :manage_members, {:projects => :settings, :members => [:new, :edit, :destroy, :autocomplete_for_member]}, :require => :member
-  map.permission :manage_versions, {:projects => [:settings, :add_version], :versions => [:edit, :close_completed, :destroy]}, :require => :member
+  map.permission :manage_versions, {:projects => :settings, :versions => [:new, :edit, :close_completed, :destroy]}, :require => :member
   map.permission :add_subprojects, {:projects => :add}, :require => :member
   
   map.project_module :issue_tracking do |map|
     # Issue categories
-    map.permission :manage_categories, {:projects => [:settings, :add_issue_category], :issue_categories => [:edit, :destroy]}, :require => :member
+    map.permission :manage_categories, {:projects => :settings, :issue_categories => [:new, :edit, :destroy]}, :require => :member
     # Issues
     map.permission :view_issues, {:projects => :roadmap, 
-                                  :issues => [:index, :changes, :show, :context_menu],
+                                  :issues => [:index, :changes, :show, :context_menu, :auto_complete],
                                   :versions => [:show, :status_by],
                                   :queries => :index,
-                                  :reports => :issue_report}
-    map.permission :add_issues, {:issues => [:new, :update_form]}
-    map.permission :edit_issues, {:issues => [:edit, :reply, :bulk_edit, :update_form]}
+                                  :reports => [:issue_report, :issue_report_details]}
+    map.permission :add_issues, {:issues => [:new, :create, :update_form]}
+    map.permission :edit_issues, {:issues => [:edit, :update, :reply, :bulk_edit, :update_form]}
     map.permission :manage_issue_relations, {:issue_relations => [:new, :destroy]}
-    map.permission :add_issue_notes, {:issues => [:edit, :reply]}
+    map.permission :manage_subtasks, {}
+    map.permission :add_issue_notes, {:issues => [:edit, :update, :reply]}
     map.permission :edit_issue_notes, {:journals => :edit}, :require => :loggedin
     map.permission :edit_own_issue_notes, {:journals => :edit}, :require => :loggedin
     map.permission :move_issues, {:issues => :move}, :require => :loggedin
@@ -55,8 +75,8 @@ Redmine::AccessControl.map do |map|
     map.permission :manage_public_queries, {:queries => [:new, :edit, :destroy]}, :require => :member
     map.permission :save_queries, {:queries => [:new, :edit, :destroy]}, :require => :loggedin
     # Gantt & calendar
-    map.permission :view_gantt, :issues => :gantt
-    map.permission :view_calendar, :issues => :calendar
+    map.permission :view_gantt, :gantts => :show
+    map.permission :view_calendar, :calendars => :show
     # Watchers
     map.permission :view_issue_watchers, {}
     map.permission :add_issue_watchers, {:watchers => :new}
@@ -92,6 +112,7 @@ Redmine::AccessControl.map do |map|
     map.permission :rename_wiki_pages, {:wiki => :rename}, :require => :member
     map.permission :delete_wiki_pages, {:wiki => :destroy}, :require => :member
     map.permission :view_wiki_pages, :wiki => [:index, :special]
+    map.permission :export_wiki_pages, {}
     map.permission :view_wiki_edits, :wiki => [:history, :diff, :annotate]
     map.permission :edit_wiki_pages, :wiki => [:edit, :preview, :add_attachment]
     map.permission :delete_wiki_pages_attachments, {}
@@ -168,6 +189,16 @@ Redmine::Activity.map do |activity|
   activity.register :wiki_edits, :class_name => 'WikiContent::Version', :default => false
   activity.register :messages, :default => false
   activity.register :time_entries, :default => false
+end
+
+Redmine::Search.map do |search|
+  search.register :issues
+  search.register :news
+  search.register :documents
+  search.register :changesets
+  search.register :wiki_pages
+  search.register :messages
+  search.register :projects
 end
 
 Redmine::WikiFormatting.map do |format|

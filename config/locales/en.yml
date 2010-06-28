@@ -112,6 +112,7 @@ en:
         greater_than_start_date: "must be greater than start date"
         not_same_project: "doesn't belong to the same project"
         circular_dependency: "This relation would create a circular dependency"
+        cant_link_an_issue_with_a_descendant: "An issue can not be linked to one of its subtasks"
 
   actionview_instancetag_blank_option: Please select
   
@@ -147,10 +148,12 @@ en:
   notice_feeds_access_key_reseted: Your RSS access key was reset.
   notice_api_access_key_reseted: Your API access key was reset.
   notice_failed_to_save_issues: "Failed to save {{count}} issue(s) on {{total}} selected: {{ids}}."
+  notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
   notice_no_issue_selected: "No issue is selected! Please, check the issues you want to edit."
   notice_account_pending: "Your account was created and is now pending administrator approval."
   notice_default_data_loaded: Default configuration successfully loaded.
   notice_unable_delete_version: Unable to delete version.
+  notice_unable_delete_time_entry: Unable to delete time log entry.
   notice_issue_done_ratios_updated: Issue done ratios updated.
   
   error_can_t_load_default_data: "Default configuration could not be loaded: {{value}}"
@@ -160,12 +163,16 @@ en:
   error_issue_not_found_in_project: 'The issue was not found or does not belong to this project'
   error_no_tracker_in_project: 'No tracker is associated to this project. Please check the Project settings.'
   error_no_default_issue_status: 'No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").'
+  error_can_not_delete_custom_field: Unable to delete custom field
+  error_can_not_delete_tracker: "This tracker contains issues and can't be deleted."
+  error_can_not_remove_role: "This role is in use and can not be deleted."
   error_can_not_reopen_issue_on_closed_version: 'An issue assigned to a closed version can not be reopened'
   error_can_not_archive_project: This project can not be archived
   error_issue_done_ratios_not_updated: "Issue done ratios not updated."
   error_workflow_copy_source: 'Please select a source tracker or role'
   error_workflow_copy_target: 'Please select target tracker(s) and role(s)'
-  
+  error_unable_delete_issue_status: 'Unable to delete issue status'
+  error_unable_to_connect: "Unable to connect ({{value}})"
   warning_attachments_not_saved: "{{count}} file(s) could not be saved."
   
   mail_subject_lost_password: "Your {{value}} password"
@@ -221,6 +228,7 @@ en:
   field_priority: Priority
   field_fixed_version: Target version
   field_user: User
+  field_principal: Principal
   field_role: Role
   field_homepage: Homepage
   field_is_public: Public
@@ -276,6 +284,7 @@ en:
   field_content: Content
   field_group_by: Group results by
   field_sharing: Sharing
+  field_parent_issue: Parent task
   
   setting_app_title: Application title
   setting_app_subtitle: Application subtitle
@@ -329,12 +338,14 @@ en:
   setting_issue_done_ratio_issue_status: Use the issue status
   setting_start_of_week: Start calendars on
   setting_rest_api_enabled: Enable REST web service
+  setting_cache_formatted_text: Cache formatted text
   
   permission_add_project: Create project
   permission_add_subprojects: Create subprojects
   permission_edit_project: Edit project
   permission_select_project_modules: Select project modules
   permission_manage_members: Manage members
+  permission_manage_project_activities: Manage project activities
   permission_manage_versions: Manage versions
   permission_manage_categories: Manage issue categories
   permission_view_issues: View Issues
@@ -382,6 +393,8 @@ en:
   permission_edit_own_messages: Edit own messages
   permission_delete_messages: Delete messages
   permission_delete_own_messages: Delete own messages
+  permission_export_wiki_pages: Export wiki pages
+  permission_manage_subtasks: Manage subtasks
   
   project_module_issue_tracking: Issue tracking
   project_module_time_tracking: Time tracking
@@ -448,6 +461,7 @@ en:
   label_my_page: My page
   label_my_account: My account
   label_my_projects: My projects
+  label_my_page_block: My page block
   label_administration: Administration
   label_login: Sign in
   label_logout: Sign out
@@ -625,6 +639,7 @@ en:
   label_changes_details: Details of all changes
   label_issue_tracking: Issue tracking
   label_spent_time: Spent time
+  label_overall_spent_time: Overall spent time
   label_f_hour: "{{value}} hour"
   label_f_hour_plural: "{{value}} hours"
   label_time_tracking: Time tracking
@@ -662,6 +677,8 @@ en:
   label_board: Forum
   label_board_new: New forum
   label_board_plural: Forums
+  label_board_locked: Locked
+  label_board_sticky: Sticky
   label_topic_plural: Topics
   label_message_plural: Messages
   label_message_last: Last message
@@ -743,6 +760,9 @@ en:
   label_api_access_key: API access key
   label_missing_api_access_key: Missing an API access key
   label_api_access_key_created_on: "API access key created {{value}} ago"
+  label_profile: Profile
+  label_subtask_plural: Subtasks
+  label_project_copy_notifications: Send email notifications during the project copy
   
   button_login: Login
   button_submit: Submit
@@ -853,6 +873,8 @@ en:
   text_wiki_page_destroy_children: "Delete child pages and all their descendants"
   text_wiki_page_reassign_children: "Reassign child pages to this parent page"
   text_own_membership_delete_confirmation: "You are about to remove some or all of your permissions and may no longer be able to edit this project after that.\nAre you sure you want to continue?"
+  text_zoom_in: Zoom in
+  text_zoom_out: Zoom out
   
   default_role_manager: Manager
   default_role_developper: Developer
@@ -880,3 +902,4 @@ en:
   enumeration_doc_categories: Document categories
   enumeration_activities: Activities (time tracking)
   enumeration_system_activity: System Activity
+

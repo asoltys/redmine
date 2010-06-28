@@ -9,6 +9,7 @@ xml.issue do
  	xml.assigned_to(:id => @issue.assigned_to_id, :name => @issue.assigned_to.name) unless @issue.assigned_to.nil?
   xml.category(:id => @issue.category_id, :name => @issue.category.name) unless @issue.category.nil?
   xml.fixed_version(:id => @issue.fixed_version_id, :name => @issue.fixed_version.name) unless @issue.fixed_version.nil?
+  xml.parent(:id => @issue.parent_id) unless @issue.parent.nil?
   
   xml.subject 		@issue.subject
   xml.description @issue.description
@@ -28,6 +29,12 @@ xml.issue do
   
   xml.created_on @issue.created_on
   xml.updated_on @issue.updated_on
+  
+  xml.relations do
+  	@issue.relations.select {|r| r.other_issue(@issue).visible? }.each do |relation|
+  		xml.relation(:id => relation.id, :issue_id => relation.other_issue(@issue).id, :relation_type => relation.relation_type_for(@issue), :delay => relation.delay)
+  	end
+  end
   
   xml.changesets do
   	@issue.changesets.each do |changeset|

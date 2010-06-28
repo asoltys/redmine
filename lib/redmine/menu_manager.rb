@@ -84,6 +84,14 @@ module TreeNodePatch
 
     end
 
+    # Wrapp remove! making sure to decrement the last_items counter if
+    # the removed child was a last item
+    def remove!(child)
+      @last_items_count -= +1 if child && child.last
+      super
+    end
+
+
     # Will return the position (zero-based) of the current child in
     # it's parent
     def position
@@ -158,6 +166,11 @@ module Redmine
         render_menu((project && !project.new_record?) ? :project_menu : :application_menu, project)
       end
       
+      def display_main_menu?(project)
+        menu_name = project && !project.new_record? ? :project_menu : :application_menu
+        Redmine::MenuManager.items(menu_name).size > 1 # 1 element is the root
+      end
+
       def render_menu(menu, project=nil)
         links = []
         menu_items_for(menu, project) do |node|
@@ -352,7 +365,7 @@ module Redmine
             target_root.add(MenuItem.new(name, url, options))
           end
           
-        elsif options.delete(:last)
+        elsif options[:last] # don't delete, needs to be stored
           target_root.add_last(MenuItem.new(name, url, options))
         else
           target_root.add(MenuItem.new(name, url, options))
@@ -386,7 +399,7 @@ module Redmine
     
     class MenuItem < Tree::TreeNode
       include Redmine::I18n
-      attr_reader :name, :url, :param, :condition, :parent, :child_menus
+      attr_reader :name, :url, :param, :condition, :parent, :child_menus, :last
       
       def initialize(name, url, options)
         raise ArgumentError, "Invalid option :if for menu item '#{name}'" if options[:if] && !options[:if].respond_to?(:call)
@@ -403,6 +416,7 @@ module Redmine
         @html_options[:class] = [@html_options[:class], @name.to_s.dasherize].compact.join(' ')
         @parent = options[:parent]
         @child_menus = options[:children]
+        @last = options[:last] || false
         super @name.to_sym
       end
       

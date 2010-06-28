@@ -110,8 +110,8 @@ ActionController::Routing::Routes.draw do |map|
       issues_views.connect 'projects/:project_id/issues', :action => 'index'
       issues_views.connect 'projects/:project_id/issues.:format', :action => 'index'
       issues_views.connect 'projects/:project_id/issues/new', :action => 'new'
-      issues_views.connect 'projects/:project_id/issues/gantt', :action => 'gantt'
-      issues_views.connect 'projects/:project_id/issues/calendar', :action => 'calendar'
+      issues_views.connect 'projects/:project_id/issues/gantt', :controller => 'gantts', :action => 'show'
+      issues_views.connect 'projects/:project_id/issues/calendar', :controller => 'calendars', :action => 'show'
       issues_views.connect 'projects/:project_id/issues/:copy_from/copy', :action => 'new'
       issues_views.connect 'issues/:id', :action => 'show', :id => /\d+/
       issues_views.connect 'issues/:id.:format', :action => 'show', :id => /\d+/
@@ -120,17 +120,22 @@ ActionController::Routing::Routes.draw do |map|
     end
     issues_routes.with_options :conditions => {:method => :post} do |issues_actions|
       issues_actions.connect 'issues', :action => 'index'
-      issues_actions.connect 'projects/:project_id/issues', :action => 'new'
+      issues_actions.connect 'projects/:project_id/issues', :action => 'create'
+      issues_actions.connect 'projects/:project_id/issues/gantt', :controller => 'gantts', :action => 'show'
+      issues_actions.connect 'projects/:project_id/issues/calendar', :controller => 'calendars', :action => 'show'
       issues_actions.connect 'issues/:id/quoted', :action => 'reply', :id => /\d+/
       issues_actions.connect 'issues/:id/:action', :action => /edit|move|destroy/, :id => /\d+/
-      issues_actions.connect 'issues.:format', :action => 'new', :format => /xml/
+      issues_actions.connect 'issues.:format', :action => 'create', :format => /xml/
     end
     issues_routes.with_options :conditions => {:method => :put} do |issues_actions|
-      issues_actions.connect 'issues/:id.:format', :action => 'edit', :id => /\d+/, :format => /xml/
+      issues_actions.connect 'issues/:id/edit', :action => 'update', :id => /\d+/
+      issues_actions.connect 'issues/:id.:format', :action => 'update', :id => /\d+/, :format => /xml/
     end
     issues_routes.with_options :conditions => {:method => :delete} do |issues_actions|
       issues_actions.connect 'issues/:id.:format', :action => 'destroy', :id => /\d+/, :format => /xml/
     end
+    issues_routes.connect 'issues/gantt', :controller => 'gantts', :action => 'show'
+    issues_routes.connect 'issues/calendar', :controller => 'calendars', :action => 'show'
     issues_routes.connect 'issues/:action'
   end
   
@@ -139,9 +144,9 @@ ActionController::Routing::Routes.draw do |map|
     relations.connect 'issues/:issue_id/relations/:id/destroy', :action => 'destroy'
   end
   
-  map.with_options :controller => 'reports', :action => 'issue_report', :conditions => {:method => :get} do |reports|
-    reports.connect 'projects/:id/issues/report'
-    reports.connect 'projects/:id/issues/report/:detail'
+  map.with_options :controller => 'reports', :conditions => {:method => :get} do |reports|
+    reports.connect 'projects/:id/issues/report', :action => 'issue_report'
+    reports.connect 'projects/:id/issues/report/:detail', :action => 'issue_report_details'
   end
   
   map.with_options :controller => 'news' do |news_routes|
@@ -190,8 +195,6 @@ ActionController::Routing::Routes.draw do |map|
       project_views.connect 'projects/:id/:action', :action => /roadmap|destroy|settings/
       project_views.connect 'projects/:id/files', :action => 'list_files'
       project_views.connect 'projects/:id/files/new', :action => 'add_file'
-      project_views.connect 'projects/:id/versions/new', :action => 'add_version'
-      project_views.connect 'projects/:id/categories/new', :action => 'add_issue_category'
       project_views.connect 'projects/:id/settings/:tab', :action => 'settings'
     end
 
@@ -208,8 +211,6 @@ ActionController::Routing::Routes.draw do |map|
       project_actions.connect 'projects.:format', :action => 'add', :format => /xml/
       project_actions.connect 'projects/:id/:action', :action => /edit|destroy|archive|unarchive/
       project_actions.connect 'projects/:id/files/new', :action => 'add_file'
-      project_actions.connect 'projects/:id/versions/new', :action => 'add_version'
-      project_actions.connect 'projects/:id/categories/new', :action => 'add_issue_category'
       project_actions.connect 'projects/:id/activities/save', :action => 'save_activities'
     end
 
@@ -224,9 +225,14 @@ ActionController::Routing::Routes.draw do |map|
   end
   
   map.with_options :controller => 'versions' do |versions|
+    versions.connect 'projects/:project_id/versions/new', :action => 'new'
     versions.with_options :conditions => {:method => :post} do |version_actions|
       version_actions.connect 'projects/:project_id/versions/close_completed', :action => 'close_completed'
     end
+  end
+  
+  map.with_options :controller => 'issue_categories' do |categories|
+    categories.connect 'projects/:project_id/issue_categories/new', :action => 'new'
   end
   
   map.with_options :controller => 'repositories' do |repositories|

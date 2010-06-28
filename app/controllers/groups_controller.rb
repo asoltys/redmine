@@ -57,7 +57,7 @@ class GroupsController < ApplicationController
 
   # GET /groups/1/edit
   def edit
-    @group = Group.find(params[:id])
+    @group = Group.find(params[:id], :include => :projects)
   end
 
   # POST /groups
@@ -138,8 +138,7 @@ class GroupsController < ApplicationController
   
   def edit_membership
     @group = Group.find(params[:id])
-    @membership = params[:membership_id] ? Member.find(params[:membership_id]) : Member.new(:principal => @group)
-    @membership.attributes = params[:membership]
+    @membership = Member.edit_membership(params[:membership_id], params[:membership], @group)
     @membership.save if request.post?
     respond_to do |format|
        format.html { redirect_to :controller => 'groups', :action => 'edit', :id => @group, :tab => 'memberships' }

@@ -197,7 +197,8 @@ sv:
   notice_email_error: "Ett fel inträffade när mail skickades ({{value}})"
   notice_feeds_access_key_reseted: Din RSS-nyckel återställdes.
   notice_api_access_key_reseted: Din API-nyckel återställdes.
-  notice_failed_to_save_issues: "Misslyckades att spara {{count}} ärende(n) på {{total}} valt: {{ids}}."
+  notice_failed_to_save_issues: "Misslyckades med att spara {{count}} ärende(n) på {{total}} valt: {{ids}}."
+  notice_failed_to_save_members: "Misslyckades med att spara medlem(mar): {{errors}}."
   notice_no_issue_selected: "Inget ärende är markerat! Var vänlig, markera de ärenden du vill ändra."
   notice_account_pending: "Ditt konto skapades och avvaktar nu administratörens godkännande."
   notice_default_data_loaded: Standardkonfiguration inläst.
@@ -209,13 +210,18 @@ sv:
   error_scm_command_failed: "Ett fel inträffade vid försök att nå versionsarkivet: {{value}}"
   error_scm_annotate: "Inlägget existerar inte eller kan inte kommenteras."
   error_issue_not_found_in_project: 'Ärendet hittades inte eller så tillhör det inte detta projekt'
-  error_no_tracker_in_project: Ingen ärendetyp är associerad med projektet. Vänligen kontrollera projektinställningarna.
-  error_no_default_issue_status: Ingen status är definierad som standard för nya ärenden. Vänligen kontrollera din konfiguration (Gå till "Administration -> Ärendestatus").
-  error_can_not_reopen_issue_on_closed_version: Ett ärende tilldelat en stängd version kan inte öppnas på nytt
+  error_no_tracker_in_project: 'Ingen ärendetyp är associerad med projektet. Vänligen kontrollera projektinställningarna.'
+  error_no_default_issue_status: 'Ingen status är definierad som standard för nya ärenden. Vänligen kontrollera din konfiguration (Gå till "Administration -> Ärendestatus").'
+  error_can_not_delete_custom_field: Kan inte ta bort användardefinerat fält
+  error_can_not_delete_tracker: Det finns ärenden av denna typ och den är därför inte möjlig att ta bort.
+  error_can_not_remove_role: "Denna roll används och den är därför inte möjlig att ta bort."
+  error_can_not_reopen_issue_on_closed_version: 'Ett ärende tilldelat en stängd version kan inte öppnas på nytt'
   error_can_not_archive_project: Detta projekt kan inte arkiveras
-  error_issue_done_ratios_not_updated: % klart inte uppdaterade.
-  error_workflow_copy_source: Vänligen välj källans ärendetyp eller roll
-  error_workflow_copy_target: Vänligen välj ärendetyp(er) och roll(er) för mål
+  error_issue_done_ratios_not_updated: "% klart inte uppdaterade."
+  error_workflow_copy_source: 'Vänligen välj källans ärendetyp eller roll'
+  error_workflow_copy_target: 'Vänligen välj ärendetyp(er) och roll(er) för mål'
+  error_unable_delete_issue_status: 'Ärendestatus kunde inte tas bort'
+  error_unable_to_connect: Kan inte ansluta ({{value}})
   
   warning_attachments_not_saved: "{{count}} fil(er) kunde inte sparas."
   
@@ -272,6 +278,7 @@ sv:
   field_priority: Prioritet
   field_fixed_version: Versionsmål
   field_user: Användare
+  field_principal: Principal
   field_role: Roll
   field_homepage: Hemsida
   field_is_public: Publik
@@ -327,6 +334,7 @@ sv:
   field_content: Innehåll
   field_group_by: Gruppera resultat efter
   field_sharing: Delning
+  field_parent_issue: Förälderaktivitet
   
   setting_app_title: Applikationsrubrik
   setting_app_subtitle: Applikationsunderrubrik
@@ -380,12 +388,14 @@ sv:
   setting_issue_done_ratio_issue_status: Använd ärendestatus
   setting_start_of_week: Första dagen i veckan
   setting_rest_api_enabled: Aktivera REST webbtjänst
+  setting_cache_formatted_text: Cacha formaterad text
   
   permission_add_project: Skapa projekt
   permission_add_subprojects: Skapa underprojekt
   permission_edit_project: Ändra projekt
   permission_select_project_modules: Välja projektmoduler
   permission_manage_members: Hantera medlemmar
+  permission_manage_project_activities: Hantera projektaktiviteter
   permission_manage_versions: Hantera versioner
   permission_manage_categories: Hantera ärendekategorier
   permission_add_issues: Lägga till ärenden
@@ -433,6 +443,8 @@ sv:
   permission_edit_own_messages: Ändra egna meddelanden
   permission_delete_messages: Ta bort meddelanden
   permission_delete_own_messages: Ta bort egna meddelanden
+  permission_export_wiki_pages: Exportera wikisidor
+  permission_manage_subtasks: Hantera underaktiviteter
   
   project_module_issue_tracking: Ärendeuppföljning
   project_module_time_tracking: Tidsuppföljning
@@ -499,6 +511,7 @@ sv:
   label_my_page: Min sida
   label_my_account: Mitt konto
   label_my_projects: Mina projekt
+  label_my_page_block: '"Min sida"-block'
   label_administration: Administration
   label_login: Logga in
   label_logout: Logga ut
@@ -713,6 +726,8 @@ sv:
   label_board: Forum
   label_board_new: Nytt forum
   label_board_plural: Forum
+  label_board_locked: Låst
+  label_board_sticky: Sticky
   label_topic_plural: Ämnen
   label_message_plural: Meddelanden
   label_message_last: Senaste meddelande
@@ -794,9 +809,12 @@ sv:
   label_api_access_key: API-nyckel
   label_missing_api_access_key: Saknar en API-nyckel
   label_api_access_key_created_on: API-nyckel skapad för {{value}} sedan
+  label_profile: Profil
+  label_subtask_plural: Underaktiviteter
+  label_project_copy_notifications: Skicka mailnotifieringar när projektet kopieras
   
   button_login: Logga in
-  button_submit: Spara
+  button_submit: Skicka
   button_save: Spara
   button_check_all: Markera alla
   button_uncheck_all: Avmarkera alla
@@ -904,6 +922,8 @@ sv:
   text_wiki_page_destroy_children: Ta bort alla underliggande sidor
   text_wiki_page_reassign_children: Flytta undersidor till denna föräldersida
   text_own_membership_delete_confirmation: "Några av, eller alla, dina behörigheter kommer att tas bort och du kanske inte längre kommer kunna göra ändringar i det här projektet.\nVill du verkligen fortsätta?"
+  text_zoom_out: Zooma ut
+  text_zoom_in: Zooma in
   
   default_role_manager: Projektledare
   default_role_developper: Utvecklare
@@ -912,9 +932,9 @@ sv:
   default_tracker_feature: Funktionalitet
   default_tracker_support: Support
   default_issue_status_new: Ny
-  default_issue_status_in_progress: In Progress
+  default_issue_status_in_progress: Pågår
   default_issue_status_resolved: Löst
-  default_issue_status_feedback: Feedback
+  default_issue_status_feedback: Återkoppling
   default_issue_status_closed: Stängd
   default_issue_status_rejected: Avslagen
   default_doc_category_user: Användardokumentation
@@ -931,3 +951,5 @@ sv:
   enumeration_doc_categories: Dokumentkategorier
   enumeration_activities: Aktiviteter (tidsuppföljning)
   enumeration_system_activity: Systemaktivitet
+  notice_unable_delete_time_entry: Unable to delete time log entry.
+  label_overall_spent_time: Overall spent time

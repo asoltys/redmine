@@ -16,13 +16,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class IssueRelationsController < ApplicationController
-  before_filter :find_project, :authorize
+  before_filter :find_issue, :find_project_from_association, :authorize
   
   def new
     @relation = IssueRelation.new(params[:relation])
     @relation.issue_from = @issue
-    if params[:relation] && !params[:relation][:issue_to_id].blank?
-      @relation.issue_to = Issue.visible.find_by_id(params[:relation][:issue_to_id])
+    if params[:relation] && m = params[:relation][:issue_to_id].to_s.match(/^#?(\d+)$/)
+      @relation.issue_to = Issue.visible.find_by_id(m[1].to_i)
     end
     @relation.save if request.post?
     respond_to do |format|
@@ -52,9 +52,8 @@ class IssueRelationsController < ApplicationController
   end
   
 private
-  def find_project
-    @issue = Issue.find(params[:issue_id])
-    @project = @issue.project
+  def find_issue
+    @issue = @object = Issue.find(params[:issue_id])
   rescue ActiveRecord::RecordNotFound
     render_404
   end

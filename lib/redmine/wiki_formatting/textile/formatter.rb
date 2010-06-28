@@ -16,15 +16,15 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 require 'redcloth3'
-require 'coderay'
 
 module Redmine
   module WikiFormatting
     module Textile
       class Formatter < RedCloth3
+        include ActionView::Helpers::TagHelper
         
         # auto_link rule after textile rules so that it doesn't break !image_url! tags
-        RULES = [:textile, :block_markdown_rule, :inline_auto_link, :inline_auto_mailto, :inline_toc, :inline_macros]
+        RULES = [:textile, :block_markdown_rule, :inline_auto_link, :inline_auto_mailto, :inline_toc]
         
         def initialize(*args)
           super
@@ -33,9 +33,8 @@ module Redmine
           self.filter_styles=true
         end
         
-        def to_html(*rules, &block)
+        def to_html(*rules)
           @toc = []
-          @macros_runner = block
           super(*RULES).to_s
         end
   
@@ -54,8 +53,8 @@ module Redmine
             text.gsub!(/<redpre#(\d+)>/) do
               content = @pre_list[$1.to_i]
               if content.match(/<code\s+class="(\w+)">\s?(.+)/m)
-                content = "<code class=\"#{$1} CodeRay\">" + 
-                  CodeRay.scan($2, $1.downcase).html(:escape => false, :line_numbers => :inline)
+                content = "<code class=\"#{$1} syntaxhl\">" + 
+                  Redmine::SyntaxHighlighting.highlight_by_language($2, $1)
               end
               content
             end
@@ -66,6 +65,11 @@ module Redmine
         def textile_p_withtoc(tag, atts, cite, content)
           # removes wiki links from the item
           toc_item = content.gsub(/(\[\[([^\]\|]*)(\|([^\]]*))?\]\])/) { $4 || $2 }
+          # sanitizes titles from links
+          # see redcloth3.rb, same as "#{pre}#{text}#{post}"
+          toc_item.gsub!(LINK_RE) { [$2, $4, $9].join }
+          # sanitizes image links from titles
+          toc_item.gsub!(IMAGE_RE) { [$5].join }
           # removes styles
           # eg. %{color:red}Triggers% => Triggers
           toc_item.gsub! %r[%\{[^\}]*\}([^%]+)%], '\\1'
@@ -99,32 +103,6 @@ module Redmine
             end
             out << '</ul>'
             out
-          end
-        end
-        
-        MACROS_RE = /
-                      (!)?                        # escaping
-                      (
-                      \{\{                        # opening tag
-                      ([\w]+)                     # macro name
-                      (\(([^\}]*)\))?             # optional arguments
-                      \}\}                        # closing tag
-                      )
-                    /x unless const_defined?(:MACROS_RE)
-        
-        def inline_macros(text)
-          text.gsub!(MACROS_RE) do
-            esc, all, macro = $1, $2, $3.downcase
-            args = ($5 || '').split(',').each(&:strip)
-            if esc.nil?
-              begin
-                @macros_runner.call(macro, args)
-              rescue => e
-                "<div class=\"flash error\">Error executing the <strong>#{macro}</strong> macro (#{e})</div>"
-              end || all
-            else
-              all
-            end
           end
         end
         
@@ -162,7 +140,8 @@ module Redmine
                 url=url[0..-2] # discard closing parenth from url
                 post = ")"+post # add closing parenth to post
               end
-              %(#{leading}<a class="external" href="#{proto=="www."?"http://www.":proto}#{url}">#{proto + url}</a>#{post})
+              tag = content_tag('a', proto + url, :href => "#{proto=="www."?"http://www.":proto}#{url}", :class => 'external')
+              %(#{leading}#{tag}#{post})
             end
           end
         end
@@ -174,7 +153,7 @@ module Redmine
             if text.match(/<a\b[^>]*>(.*)(#{Regexp.escape(mail)})(.*)<\/a>/)
               mail
             else
-              %{<a href="mailto:#{mail}" class="email">#{mail}</a>}
+              content_tag('a', mail, :href => "mailto:#{mail}", :class => "email")
             end
           end
         end
