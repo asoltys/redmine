@@ -169,6 +169,7 @@ Redmine::MenuManager.map :project_menu do |menu|
   menu.push :new_issue, { :controller => 'issues', :action => 'new' }, :param => :project_id, :caption => :label_issue_new,
               :html => { :accesskey => Redmine::AccessKeys.key_for(:new_issue) }
   menu.push :news, { :controller => 'news', :action => 'index' }, :param => :project_id, :caption => :label_news_plural
+  menu.push :time, { :controller => 'timelog', :action => 'edit' }, :param => :project_id, :caption => 'Time' 
   menu.push :documents, { :controller => 'documents', :action => 'index' }, :param => :project_id, :caption => :label_document_plural
   menu.push :wiki, { :controller => 'wiki', :action => 'index', :page => nil }, 
               :if => Proc.new { |p| p.wiki && !p.wiki.new_record? }
