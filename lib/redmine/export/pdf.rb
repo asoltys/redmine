@@ -35,6 +35,11 @@ module Redmine
           super()
           set_language_if_valid lang
           case current_language.to_s.downcase
+          when 'ko'
+            extend(PDF_Korean)
+            AddUHCFont()
+            @font_for_content = 'UHC'
+            @font_for_footer = 'UHC'
           when 'ja'
             extend(PDF_Japanese)
             AddSJISFont()
@@ -144,13 +149,15 @@ module Redmine
         # rows
         pdf.SetFontStyle('',8)
         pdf.SetFillColor(255, 255, 255)
-        group = false
+        previous_group = false
         issues.each do |issue|
-          if query.grouped? && issue.send(query.group_by) != group
-            group = issue.send(query.group_by)
+          if query.grouped? && (group = query.group_by_column.value(issue)) != previous_group
             pdf.SetFontStyle('B',9)
-            pdf.Cell(277, row_height, "#{group.blank? ? 'None' : group.to_s}", 1, 1, 'L')
+            pdf.Cell(277, row_height, 
+              (group.blank? ? 'None' : group.to_s) + " (#{@issue_count_by_group[group]})",
+              1, 1, 'L')
             pdf.SetFontStyle('',8)
+            previous_group = group
           end
           pdf.Cell(15, row_height, issue.id.to_s, 1, 0, 'L', 1)
           query.columns.each_with_index do |column, i|

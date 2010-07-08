@@ -34,13 +34,6 @@ class ProjectsControllerTest < ActionController::TestCase
     Setting.default_language = 'en'
   end
   
-  def test_index_routing
-    assert_routing(
-      {:method => :get, :path => '/projects'},
-      :controller => 'projects', :action => 'index'
-    )
-  end
-  
   def test_index
     get :index
     assert_response :success
@@ -59,13 +52,6 @@ class ProjectsControllerTest < ActionController::TestCase
     assert_no_tag :a, :content => /Private child of eCookbook/
   end
   
-  def test_index_atom_routing
-    assert_routing(
-      {:method => :get, :path => '/projects.atom'},
-      :controller => 'projects', :action => 'index', :format => 'atom'
-    )
-  end
-  
   def test_index_atom
     get :index, :format => 'atom'
     assert_response :success
@@ -74,19 +60,31 @@ class ProjectsControllerTest < ActionController::TestCase
     assert_select 'feed>entry', :count => Project.count(:conditions => Project.visible_by(User.current))
   end
   
-  def test_add_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/new'},
-      :controller => 'projects', :action => 'add'
-    )
-    assert_recognizes(
-      {:controller => 'projects', :action => 'add'},
-      {:method => :post, :path => '/projects/new'}
-    )
-    assert_recognizes(
-      {:controller => 'projects', :action => 'add'},
-      {:method => :post, :path => '/projects'}
-    )
+  context "#index" do
+    context "by non-admin user with view_time_entries permission" do
+      setup do
+        @request.session[:user_id] = 3
+      end
+      should "show overall spent time link" do
+        get :index
+        assert_template 'index'
+        assert_tag :a, :attributes => {:href => '/time_entries'}
+      end
+    end
+    
+    context "by non-admin user without view_time_entries permission" do
+      setup do
+        Role.find(2).remove_permission! :view_time_entries
+        Role.non_member.remove_permission! :view_time_entries
+        Role.anonymous.remove_permission! :view_time_entries
+        @request.session[:user_id] = 3
+      end
+      should "not show overall spent time link" do
+        get :index
+        assert_template 'index'
+        assert_no_tag :a, :attributes => {:href => '/time_entries'}
+      end
+    end 
   end
   
   context "#add" do
@@ -248,13 +246,6 @@ class ProjectsControllerTest < ActionController::TestCase
     end
   end
   
-  def test_show_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/test'},
-      :controller => 'projects', :action => 'show', :id => 'test'
-    )
-  end
-  
   def test_show_by_id
     get :show, :id => 1
     assert_response :success
@@ -295,17 +286,6 @@ class ProjectsControllerTest < ActionController::TestCase
     assert_tag :tag => 'a', :content => /Private child/
   end
   
-  def test_settings_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/4223/settings'},
-      :controller => 'projects', :action => 'settings', :id => '4223'
-    )
-    assert_routing(
-      {:method => :get, :path => '/projects/4223/settings/members'},
-      :controller => 'projects', :action => 'settings', :id => '4223', :tab => 'members'
-    )
-  end
-  
   def test_settings
     @request.session[:user_id] = 2 # manager
     get :settings, :id => 1
@@ -320,65 +300,6 @@ class ProjectsControllerTest < ActionController::TestCase
     assert_redirected_to 'projects/ecookbook/settings'
     project = Project.find(1)
     assert_equal 'Test changed name', project.name
-  end
-  
-  def test_add_version_routing
-    assert_routing(
-      {:method => :get, :path => 'projects/64/versions/new'},
-      :controller => 'projects', :action => 'add_version', :id => '64'
-    )
-    assert_routing(
-    #TODO: use PUT
-      {:method => :post, :path => 'projects/64/versions/new'},
-      :controller => 'projects', :action => 'add_version', :id => '64'
-    )
-  end
-  
-  def test_add_version
-    @request.session[:user_id] = 2 # manager
-    assert_difference 'Version.count' do
-      post :add_version, :id => '1', :version => {:name => 'test_add_version'}
-    end
-    assert_redirected_to '/projects/ecookbook/settings/versions'
-    version = Version.find_by_name('test_add_version')
-    assert_not_nil version
-    assert_equal 1, version.project_id
-  end
-  
-  def test_add_version_from_issue_form
-    @request.session[:user_id] = 2 # manager
-    assert_difference 'Version.count' do
-      xhr :post, :add_version, :id => '1', :version => {:name => 'test_add_version_from_issue_form'}
-    end
-    assert_response :success
-    assert_select_rjs :replace, 'issue_fixed_version_id'
-    version = Version.find_by_name('test_add_version_from_issue_form')
-    assert_not_nil version
-    assert_equal 1, version.project_id
-  end
-  
-  def test_add_issue_category_routing
-    assert_routing(
-      {:method => :get, :path => 'projects/test/categories/new'},
-      :controller => 'projects', :action => 'add_issue_category', :id => 'test'
-    )
-    assert_routing(
-    #TODO: use PUT and update form
-      {:method => :post, :path => 'projects/64/categories/new'},
-      :controller => 'projects', :action => 'add_issue_category', :id => '64'
-    )
-  end
-  
-  def test_destroy_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/567/destroy'},
-      :controller => 'projects', :action => 'destroy', :id => '567'
-    )
-    assert_routing(
-    #TODO: use DELETE and update form
-      {:method => :post, :path => 'projects/64/destroy'},
-      :controller => 'projects', :action => 'destroy', :id => '64'
-    )
   end
   
   def test_get_destroy
@@ -417,17 +338,6 @@ class ProjectsControllerTest < ActionController::TestCase
     assert mail.body.include?('testfile.txt')
   end
   
-  def test_add_file_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/33/files/new'},
-      :controller => 'projects', :action => 'add_file', :id => '33'
-    )
-    assert_routing(
-      {:method => :post, :path => '/projects/33/files/new'},
-      :controller => 'projects', :action => 'add_file', :id => '33'
-    )
-  end
-  
   def test_add_version_file
     set_tmp_attachments_directory
     @request.session[:user_id] = 2
@@ -458,20 +368,6 @@ class ProjectsControllerTest < ActionController::TestCase
                    :attributes => { :href => '/attachments/download/9/version_file.zip' }
   end
 
-  def test_list_files_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/33/files'},
-      :controller => 'projects', :action => 'list_files', :id => '33'
-    )
-  end
-
-  def test_roadmap_routing
-    assert_routing(
-      {:method => :get, :path => 'projects/33/roadmap'},
-      :controller => 'projects', :action => 'roadmap', :id => '33'
-    )
-  end
-  
   def test_roadmap
     get :roadmap, :id => 1
     assert_response :success
@@ -495,28 +391,15 @@ class ProjectsControllerTest < ActionController::TestCase
   end
 
   def test_roadmap_showing_subprojects_versions
+    @subproject_version = Version.generate!(:project => Project.find(3))
     get :roadmap, :id => 1, :with_subprojects => 1
     assert_response :success
     assert_template 'roadmap'
     assert_not_nil assigns(:versions)
-    # Version on subproject appears
-    assert assigns(:versions).include?(Version.find(4))
+
+    assert assigns(:versions).include?(Version.find(4)), "Shared version not found"
+    assert assigns(:versions).include?(@subproject_version), "Subproject version not found"
   end
-  
-  def test_project_activity_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/1/activity'},
-       :controller => 'projects', :action => 'activity', :id => '1'
-    )
-  end
-  
-  def test_project_activity_atom_routing
-    assert_routing(
-      {:method => :get, :path => '/projects/1/activity.atom'},
-       :controller => 'projects', :action => 'activity', :id => '1', :format => 'atom'
-    )    
-  end
-  
   def test_project_activity
     get :activity, :id => 1, :with_subprojects => 0
     assert_response :success
@@ -551,10 +434,6 @@ class ProjectsControllerTest < ActionController::TestCase
                    }
                  }
                }
-  end
-  
-  def test_global_activity_routing
-    assert_routing({:method => :get, :path => '/activity'}, :controller => 'projects', :action => 'activity', :id => nil)
   end
   
   def test_global_activity
@@ -593,22 +472,13 @@ class ProjectsControllerTest < ActionController::TestCase
                }
   end
   
-  def test_global_activity_atom_routing
-    assert_routing({:method => :get, :path => '/activity.atom'}, :controller => 'projects', :action => 'activity', :id => nil, :format => 'atom')
-  end
-  
   def test_activity_atom_feed
     get :activity, :format => 'atom'
     assert_response :success
     assert_template 'common/feed.atom.rxml'
-  end
-  
-  def test_archive_routing
-    assert_routing(
-    #TODO: use PUT to project path and modify form
-      {:method => :post, :path => 'projects/64/archive'},
-      :controller => 'projects', :action => 'archive', :id => '64'
-    )
+    assert_tag :tag => 'entry', :child => {
+      :tag => 'link',
+      :attributes => {:href => 'http://test.host/issues/11'}}
   end
   
   def test_archive
@@ -616,14 +486,6 @@ class ProjectsControllerTest < ActionController::TestCase
     post :archive, :id => 1
     assert_redirected_to 'admin/projects'
     assert !Project.find(1).active?
-  end
-  
-  def test_unarchive_routing
-    assert_routing(
-    #TODO: use PUT to project path and modify form
-      {:method => :post, :path => '/projects/567/unarchive'},
-      :controller => 'projects', :action => 'unarchive', :id => '567'
-    )
   end
   
   def test_unarchive
@@ -683,11 +545,6 @@ class ProjectsControllerTest < ActionController::TestCase
     assert_template 'show'
   end
 
-  def test_reset_activities_routing
-    assert_routing({:method => :delete, :path => 'projects/64/reset_activities'},
-                   :controller => 'projects', :action => 'reset_activities', :id => '64')
-  end
-
   def test_reset_activities
     @request.session[:user_id] = 2 # manager
     project_activity = TimeEntryActivity.new({
@@ -734,11 +591,6 @@ class ProjectsControllerTest < ActionController::TestCase
     assert_equal 3, TimeEntry.find_all_by_activity_id_and_project_id(9, 1).size, "TimeEntries still assigned to project specific activity"
   end
   
-  def test_save_activities_routing
-    assert_routing({:method => :post, :path => 'projects/64/activities/save'},
-                   :controller => 'projects', :action => 'save_activities', :id => '64')
-  end
-
   def test_save_activities_to_override_system_activities
     @request.session[:user_id] = 2 # manager
     billable_field = TimeEntryActivityCustomField.find_by_name("Billable")

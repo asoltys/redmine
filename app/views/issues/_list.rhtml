@@ -1,5 +1,6 @@
 <% form_tag({}) do -%>	
 <%= hidden_field_tag 'back_url', url_for(params) %>
+<div class="autoscroll">
 <table class="list issues">
     <thead><tr>
         <th><%= link_to image_tag('toggle_check.png'), {}, :onclick => 'toggleIssuesSelection(Element.up(this, "form")); return false;',
@@ -12,7 +13,7 @@
 	</tr></thead>
 	<% previous_group = false %>
 	<tbody>
-	<% issues.each do |issue| -%>
+	<% issue_list(issues) do |issue, level| -%>
   <% if @query.grouped? && (group = @query.group_by_column.value(issue)) != previous_group %>
     <% reset_cycle %>
     <tr class="group open">
@@ -23,12 +24,13 @@
 		</tr>
 		<% previous_group = group %>
   <% end %>
-	<tr id="issue-<%= issue.id %>" class="hascontextmenu <%= cycle('odd', 'even') %> <%= issue.css_classes %>">
+	<tr id="issue-<%= issue.id %>" class="hascontextmenu <%= cycle('odd', 'even') %> <%= issue.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %>">
 	    <td class="checkbox"><%= check_box_tag("ids[]", issue.id, false, :id => nil) %></td>
-		<td><%= link_to issue.id, :controller => 'issues', :action => 'show', :id => issue %></td>
+		<td class="id"><%= link_to issue.id, :controller => 'issues', :action => 'show', :id => issue %></td>
         <% query.columns.each do |column| %><%= content_tag 'td', column_content(column, issue), :class => column.name %><% end %>
 	</tr>
 	<% end -%>
 	</tbody>
 </table>
+</div>
 <% end -%>

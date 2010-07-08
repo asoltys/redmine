@@ -310,7 +310,7 @@ namespace :redmine do
         # Ticket number re-writing
         text = text.gsub(/#(\d+)/) do |s|
           if $1.length < 10
-            TICKET_MAP[$1.to_i] ||= $1
+#            TICKET_MAP[$1.to_i] ||= $1
             "\##{TICKET_MAP[$1.to_i] || $1}"
           else
             s
@@ -676,11 +676,13 @@ namespace :redmine do
           puts
           puts "This project already exists in your Redmine database."
           print "Are you sure you want to append data to this project ? [Y/n] "
+          STDOUT.flush
           exit if STDIN.gets.match(/^n$/i)
         end
         project.trackers << TRACKER_BUG unless project.trackers.include?(TRACKER_BUG)
         project.trackers << TRACKER_FEATURE unless project.trackers.include?(TRACKER_FEATURE)
         @target_project = project.new_record? ? nil : project
+        @target_project.reload
       end
 
       def self.connection_params
@@ -726,6 +728,7 @@ namespace :redmine do
 
     puts "WARNING: a new project will be added to Redmine during this process."
     print "Are you sure you want to continue ? [y/N] "
+    STDOUT.flush
     break unless STDIN.gets.match(/^y$/i)
     puts
 
@@ -733,6 +736,7 @@ namespace :redmine do
       default = options[:default] || ''
       while true
         print "#{text} [#{default}]: "
+        STDOUT.flush
         value = STDIN.gets.chomp!
         value = default if value.blank?
         break if yield value

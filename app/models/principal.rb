@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class Principal < ActiveRecord::Base
-  set_table_name 'users'
+  set_table_name "#{table_name_prefix}users#{table_name_suffix}"
 
   has_many :members, :foreign_key => 'user_id', :dependent => :destroy
   has_many :memberships, :class_name => 'Member', :foreign_key => 'user_id', :include => [ :project, :roles ], :conditions => "#{Project.table_name}.status=#{Project::STATUS_ACTIVE}", :order => "#{Project.table_name}.name"
@@ -32,6 +32,8 @@ class Principal < ActiveRecord::Base
     }
   }
   
+  before_create :set_default_empty_values
+  
   def <=>(principal)
     if self.class.name == principal.class.name
       self.to_s.downcase <=> principal.to_s.downcase
@@ -39,5 +41,17 @@ class Principal < ActiveRecord::Base
       # groups after users
       principal.class.name <=> self.class.name
     end
+  end
+  
+  protected
+  
+  # Make sure we don't try to insert NULL values (see #4632)
+  def set_default_empty_values
+    self.login ||= ''
+    self.hashed_password ||= ''
+    self.firstname ||= ''
+    self.lastname ||= ''
+    self.mail ||= ''
+    true
   end
 end

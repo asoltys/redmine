@@ -1,10 +1,10 @@
 <div class="splitcontentleft">
 <% if @group.users.any? %>
 	<table class="list users">
-		<thead>
+		<thead><tr>
 		  <th><%= l(:label_user) %></th>
 		  <th style="width:15%"></th>
-		</thead>
+		</tr></thead>
 		<tbody>
 		<% @group.users.sort.each do |user| %>
 			<tr id="user-<%= user.id %>" class="<%= cycle 'odd', 'even' %>">
@@ -29,7 +29,7 @@
   <% remote_form_for(:group, @group, :url => {:controller => 'groups', :action => 'add_users', :id => @group}, :method => :post) do |f| %>
     <fieldset><legend><%=l(:label_user_new)%></legend>
     
-		<p><%= text_field_tag 'user_search', nil, :size => "40" %></p>
+		<p><%= text_field_tag 'user_search', nil %></p>
 		<%= observe_field(:user_search,
                  :frequency => 0.5,
                  :update => :users,

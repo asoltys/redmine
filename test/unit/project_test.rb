@@ -147,8 +147,9 @@ class ProjectTest < ActiveSupport::TestCase
     # make sure that the project non longer exists
     assert_raise(ActiveRecord::RecordNotFound) { Project.find(@ecookbook.id) }
     # make sure related data was removed
-    assert Member.find(:all, :conditions => ['project_id = ?', @ecookbook.id]).empty?
-    assert Board.find(:all, :conditions => ['project_id = ?', @ecookbook.id]).empty?
+    assert_nil Member.first(:conditions => {:project_id => @ecookbook.id})
+    assert_nil Board.first(:conditions => {:project_id => @ecookbook.id})
+    assert_nil Issue.first(:conditions => {:project_id => @ecookbook.id})
   end
   
   def test_move_an_orphan_project_to_a_root_project
@@ -285,6 +286,48 @@ class ProjectTest < ActiveSupport::TestCase
     assert Project.new.allowed_parents.compact.empty?
   end
   
+  def test_allowed_parents_with_add_subprojects_permission
+    Role.find(1).remove_permission!(:add_project)
+    Role.find(1).add_permission!(:add_subprojects)
+    User.current = User.find(2)
+    # new project
+    assert !Project.new.allowed_parents.include?(nil)
+    assert Project.new.allowed_parents.include?(Project.find(1))
+    # existing root project
+    assert Project.find(1).allowed_parents.include?(nil)
+    # existing child
+    assert Project.find(3).allowed_parents.include?(Project.find(1))
+    assert !Project.find(3).allowed_parents.include?(nil)
+  end
+
+  def test_allowed_parents_with_add_project_permission
+    Role.find(1).add_permission!(:add_project)
+    Role.find(1).remove_permission!(:add_subprojects)
+    User.current = User.find(2)
+    # new project
+    assert Project.new.allowed_parents.include?(nil)
+    assert !Project.new.allowed_parents.include?(Project.find(1))
+    # existing root project
+    assert Project.find(1).allowed_parents.include?(nil)
+    # existing child
+    assert Project.find(3).allowed_parents.include?(Project.find(1))
+    assert Project.find(3).allowed_parents.include?(nil)
+  end
+
+  def test_allowed_parents_with_add_project_and_subprojects_permission
+    Role.find(1).add_permission!(:add_project)
+    Role.find(1).add_permission!(:add_subprojects)
+    User.current = User.find(2)
+    # new project
+    assert Project.new.allowed_parents.include?(nil)
+    assert Project.new.allowed_parents.include?(Project.find(1))
+    # existing root project
+    assert Project.find(1).allowed_parents.include?(nil)
+    # existing child
+    assert Project.find(3).allowed_parents.include?(Project.find(1))
+    assert Project.find(3).allowed_parents.include?(nil)
+  end
+  
   def test_users_by_role
     users_by_role = Project.find(1).users_by_role
     assert_kind_of Hash, users_by_role
@@ -316,6 +359,59 @@ class ProjectTest < ActiveSupport::TestCase
     parent.children.each(&:archive)
     
     assert_equal [1,2], parent.rolled_up_trackers.collect(&:id)
+  end
+
+  context "#rolled_up_versions" do
+    setup do
+      @project = Project.generate!
+      @parent_version_1 = Version.generate!(:project => @project)
+      @parent_version_2 = Version.generate!(:project => @project)
+    end
+    
+    should "include the versions for the current project" do
+      assert_same_elements [@parent_version_1, @parent_version_2], @project.rolled_up_versions
+    end
+    
+    should "include versions for a subproject" do
+      @subproject = Project.generate!
+      @subproject.set_parent!(@project)
+      @subproject_version = Version.generate!(:project => @subproject)
+
+      assert_same_elements [
+                            @parent_version_1,
+                            @parent_version_2,
+                            @subproject_version
+                           ], @project.rolled_up_versions
+    end
+    
+    should "include versions for a sub-subproject" do
+      @subproject = Project.generate!
+      @subproject.set_parent!(@project)
+      @sub_subproject = Project.generate!
+      @sub_subproject.set_parent!(@subproject)
+      @sub_subproject_version = Version.generate!(:project => @sub_subproject)
+
+      @project.reload
+
+      assert_same_elements [
+                            @parent_version_1,
+                            @parent_version_2,
+                            @sub_subproject_version
+                           ], @project.rolled_up_versions
+    end
+
+    
+    should "only check active projects" do
+      @subproject = Project.generate!
+      @subproject.set_parent!(@project)
+      @subproject_version = Version.generate!(:project => @subproject)
+      assert @subproject.archive
+
+      @project.reload
+
+      assert !@subproject.active?
+      assert_same_elements [@parent_version_1, @parent_version_2], @project.rolled_up_versions
+    end
   end
   
   def test_shared_versions_none_sharing
@@ -555,7 +651,7 @@ class ProjectTest < ActiveSupport::TestCase
     end
 
     should "copy issues" do
-      @source_project.issues << Issue.generate!(:status_id => 5,
+      @source_project.issues << Issue.generate!(:status => IssueStatus.find_by_name('Closed'),
                                                 :subject => "copy issue status",
                                                 :tracker_id => 1,
                                                 :assigned_to_id => 2,
@@ -681,16 +777,24 @@ class ProjectTest < ActiveSupport::TestCase
       assert_equal "Start page", @project.wiki.start_page
     end
 
-    should "copy wiki pages and content" do
-      assert @project.copy(@source_project)
-
+    should "copy wiki pages and content with hierarchy" do
+      assert_difference 'WikiPage.count', @source_project.wiki.pages.size do
+        assert @project.copy(@source_project)
+      end
+      
       assert @project.wiki
-      assert_equal 1, @project.wiki.pages.length
+      assert_equal @source_project.wiki.pages.size, @project.wiki.pages.size
 
       @project.wiki.pages.each do |wiki_page|
         assert wiki_page.content
         assert !@source_project.wiki.pages.include?(wiki_page)
       end
+      
+      parent = @project.wiki.find_page('Parent_page')
+      child1 = @project.wiki.find_page('Child_page_1')
+      child2 = @project.wiki.find_page('Child_page_2')
+      assert_equal parent, child1.parent
+      assert_equal parent, child2.parent
     end
 
     should "copy issue categories" do
