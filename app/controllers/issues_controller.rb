@@ -177,6 +177,7 @@ class IssuesController < ApplicationController
 
   def update
     update_issue_from_params
+    @issue.deliverable_id = params[:issue][:deliverable_id]
 
     if @issue.save_issue_with_child_records(params, @time_entry)
       render_attachment_warning_if_needed(@issue)
