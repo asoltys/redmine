@@ -46,6 +46,10 @@ class TimeEntry < ActiveRecord::Base
       end
       self.hours = nil if hours == 0
     end
+
+    if new_record? && !self.issue.nil?
+      self.deliverable_id = self.issue.deliverable_id
+    end
   end
   
   def before_validation
