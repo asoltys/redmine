@@ -79,6 +79,10 @@ class User < Principal
     super
   end
   
+  def mail=(arg)
+    write_attribute(:mail, arg.to_s.strip)
+  end
+  
   def identity_url=(url)
     if url.blank?
       write_attribute(:identity_url, '')
@@ -158,6 +162,30 @@ class User < Principal
     
   def locked?
     self.status == STATUS_LOCKED
+  end
+
+  def activate
+    self.status = STATUS_ACTIVE
+  end
+
+  def register
+    self.status = STATUS_REGISTERED
+  end
+
+  def lock
+    self.status = STATUS_LOCKED
+  end
+
+  def activate!
+    update_attribute(:status, STATUS_ACTIVE)
+  end
+
+  def register!
+    update_attribute(:status, STATUS_REGISTERED)
+  end
+
+  def lock!
+    update_attribute(:status, STATUS_LOCKED)
   end
 
   def check_password?(clear_password)
