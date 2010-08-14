@@ -931,3 +931,4 @@
   text_zoom_in: Nagyít
   notice_unable_delete_time_entry: Az időrögzítés nem törölhető
   label_overall_spent_time: Összes rászánt idő
+  setting_repository_revision_truncation: Revision number truncation length

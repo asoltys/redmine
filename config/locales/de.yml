@@ -926,3 +926,4 @@ de:
   enumeration_activities: Aktivitäten (Zeiterfassung)
   enumeration_system_activity: System-Aktivität
 
+  setting_repository_revision_truncation: Revision number truncation length
