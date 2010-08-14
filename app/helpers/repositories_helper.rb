@@ -19,7 +19,7 @@ require 'iconv'
 
 module RepositoriesHelper
   def format_revision(txt)
-    txt.to_s[0,8]
+    txt.to_s[0,Setting.repository_log_display_limit.to_i]
   end
   
   def truncate_at_line_break(text, length = 255)

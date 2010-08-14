@@ -166,6 +166,9 @@ commit_logs_encoding:
 repository_log_display_limit:
   format: int
   default: 100
+repository_revision_truncation:
+  format: int
+  default: 8
 ui_theme:
   default: ''
 emails_footer:

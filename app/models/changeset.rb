@@ -23,7 +23,7 @@ class Changeset < ActiveRecord::Base
   has_many :changes, :dependent => :delete_all
   has_and_belongs_to_many :issues
 
-  acts_as_event :title => Proc.new {|o| "#{l(:label_revision)} #{o.revision.to_s[0,8]}" + (o.short_comments.blank? ? '' : (': ' + o.short_comments))},
+  acts_as_event :title => Proc.new {|o| "#{l(:label_revision)} #{o.revision.to_s[0,Setting.repository_revision_truncation.to_i]}" + (o.short_comments.blank? ? '' : (': ' + o.short_comments))},
                 :description => :long_comments,
                 :datetime => :committed_on,
                 :url => Proc.new {|o| {:controller => 'repositories', :action => 'revision', :id => o.repository.project, :rev => o.revision}}

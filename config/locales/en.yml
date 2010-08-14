@@ -329,6 +329,7 @@ en:
   setting_diff_max_lines_displayed: Max number of diff lines displayed
   setting_file_max_size_displayed: Max size of text files displayed inline
   setting_repository_log_display_limit: Maximum number of revisions displayed on file log
+  setting_repository_revision_truncation: Revision number truncation length
   setting_openid: Allow OpenID login and registration
   setting_password_min_length: Minimum password length
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project
