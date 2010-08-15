@@ -618,6 +618,7 @@ class Issue < ActiveRecord::Base
 
   def to_xml
     xml = Builder::XmlMarkup.new
+    xml.instruct!
     xml.issue do
       xml.id					id
       xml.project(:id => project_id, :name => project.name) unless project.nil?
