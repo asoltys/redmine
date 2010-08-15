@@ -899,3 +899,5 @@ bg:
   notice_unable_delete_time_entry: Unable to delete time log entry.
   label_overall_spent_time: Overall spent time
   setting_repository_revision_truncation: Revision number truncation length
+  setting_repository_report_last_commit: Report last commit for files and directories
+  setting_repository_consideration_interval: Number of weeks to consider when searching for new changes

@@ -908,3 +908,5 @@ en-GB:
   notice_failed_to_save_members: "Failed to save member(s): {{errors}}."
   label_project_copy_notifications: Send email notifications during the project copy
   setting_repository_revision_truncation: Revision number truncation length
+  setting_repository_report_last_commit: Report last commit for files and directories
+  setting_repository_consideration_interval: Number of weeks to consider when searching for new changes

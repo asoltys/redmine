@@ -169,6 +169,11 @@ repository_log_display_limit:
 repository_revision_truncation:
   format: int
   default: 8
+repository_consideration_interval:
+  format: int
+  default: 1
+repository_report_last_commit:
+  default: 1
 ui_theme:
   default: ''
 emails_footer:

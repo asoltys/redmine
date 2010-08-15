@@ -75,7 +75,7 @@ module Redmine
                  :path => full_path,
                  :kind => (type == "tree") ? 'dir' : 'file',
                  :size => (type == "tree") ? nil : size,
-                 :lastrev => lastrev(full_path,identifier)
+                 :lastrev => Setting.repository_report_last_commit ? lastrev(full_path,identifier) : Revision.new
                 }) unless entries.detect{|entry| entry.name == name}
               end
             end

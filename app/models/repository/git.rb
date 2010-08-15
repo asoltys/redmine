@@ -47,7 +47,7 @@ class Repository::Git < Repository
   # before fetching changesets (eg. for offline resync)
   def fetch_changesets
     c = changesets.find(:first, :order => 'committed_on DESC')
-    since = (c ? c.committed_on - 7.days : nil)
+    since = (c ? c.committed_on - Setting.repository_consideration_interval.weeks : nil)
 
     revisions = scm.revisions('', nil, nil, :all => true, :since => since)
     return if revisions.nil? || revisions.empty?

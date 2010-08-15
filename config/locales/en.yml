@@ -330,6 +330,8 @@ en:
   setting_file_max_size_displayed: Max size of text files displayed inline
   setting_repository_log_display_limit: Maximum number of revisions displayed on file log
   setting_repository_revision_truncation: Revision number truncation length
+  setting_repository_report_last_commit: Report last commit for files and directories
+  setting_repository_consideration_interval: Number of weeks to consider when searching for new changes
   setting_openid: Allow OpenID login and registration
   setting_password_min_length: Minimum password length
   setting_new_project_user_role_id: Role given to a non-admin user who creates a project

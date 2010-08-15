@@ -2,6 +2,8 @@
 
 <div class="box tabular settings">
 <p><%= setting_check_box :autofetch_changesets %></p>
+<p><%= setting_check_box :repository_report_last_commit %></p>
+<p><%= setting_text_field :repository_consideration_interval, :size => 6 %></p>
 
 <p><%= setting_check_box :sys_api_enabled, 
 				 :onclick => "if (this.checked) { Form.Element.enable('settings_sys_api_key'); } else { Form.Element.disable('settings_sys_api_key'); }" %></p>
