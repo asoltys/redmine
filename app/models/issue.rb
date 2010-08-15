@@ -615,6 +615,77 @@ class Issue < ActiveRecord::Base
     end
     projects
   end
+
+  def to_xml
+    xml = Builder::XmlMarkup.new
+    xml.issue do
+      xml.id					id
+      xml.project(:id => project_id, :name => project.name) unless project.nil?
+      xml.tracker(:id => tracker_id, :name => tracker.name) unless tracker.nil?
+      xml.status(:id => status_id, :name => status.name) unless status.nil?
+      xml.priority(:id => priority_id, :name => priority.name) unless priority.nil?
+      xml.author(:id => author_id, :name => author.name) unless author.nil?
+      xml.assigned_to(:id => assigned_to_id, :name => assigned_to.name) unless assigned_to.nil?
+      xml.category(:id => category_id, :name => category.name) unless category.nil?
+      xml.fixed_version(:id => fixed_version_id, :name => fixed_version.name) unless fixed_version.nil?
+      xml.parent(:id => parent_id) unless parent.nil?
+      
+      xml.subject 		subject
+      xml.description description
+      xml.start_date 	start_date
+      xml.due_date 		due_date
+      xml.done_ratio 	done_ratio
+      xml.estimated_hours estimated_hours
+      if User.current.allowed_to?(:view_time_entries, project)
+        xml.spent_hours		spent_hours
+      end
+      
+      xml.custom_fields do
+        custom_field_values.each do |custom_value|
+          xml.custom_field custom_value.value, :id => custom_value.custom_field_id, :name => custom_value.custom_field.name
+        end
+      end unless custom_field_values.empty?
+      
+      xml.created_on created_on
+      xml.updated_on updated_on
+      
+      xml.relations do
+        relations.select {|r| r.other_issue(self).visible? }.each do |relation|
+          xml.relation(:id => relation.id, :issue_id => relation.other_issue(self).id, :relation_type => relation.relation_type_for(self), :delay => relation.delay)
+        end
+      end
+      
+      xml.changesets do
+        changesets.each do |changeset|
+          xml.changeset :revision => changeset.revision do
+            xml.user(:id => changeset.user_id, :name => changeset.user.name) unless changeset.user.nil?
+            xml.comments changeset.comments
+            xml.committed_on changeset.committed_on
+          end
+        end
+      end if User.current.allowed_to?(:view_changesets, project) && changesets.any?
+      
+      xml.journals do
+        journals.each do |journal|
+          xml.journal :id => journal.id do
+            xml.user(:id => journal.user_id, :name => journal.user.name) unless journal.user.nil?
+            xml.notes journal.notes
+            xml.details do
+              journal.details.each do |detail|
+                xml.detail :property => detail.property, :name => detail.prop_key, :old => detail.old_value, :new => detail.value
+              end
+            end
+          end
+        end
+      end unless journals.empty?
+    end
+
+    return xml.target!
+  end
+
+  def to_json
+    Hash.from_xml(to_xml).to_json
+  end
    
   private
   

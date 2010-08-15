@@ -109,7 +109,7 @@ class IssuesController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     render_404
   end
-  
+
   def show
     @journals = @issue.journals.find(:all, :include => [:user, :details], :order => "#{Journal.table_name}.created_on ASC")
     @journals.each_with_index {|j,i| j.indice = i+1}
@@ -120,9 +120,10 @@ class IssuesController < ApplicationController
     @edit_allowed = User.current.allowed_to?(:edit_issues, @project)
     @priorities = IssuePriority.all
     @time_entry = TimeEntry.new
+
     respond_to do |format|
       format.html { render :template => 'issues/show.rhtml' }
-      format.xml  { render :layout => false }
+      format.xml  { render :text => @issue.to_xml, :layout => false }
       format.json { render :text => @issue.to_json, :layout => false }
       format.atom { render :action => 'changes', :layout => false, :content_type => 'application/atom+xml' }
       format.pdf  { send_data(issue_to_pdf(@issue), :type => 'application/pdf', :filename => "#{@project.identifier}-#{@issue.id}.pdf") }
