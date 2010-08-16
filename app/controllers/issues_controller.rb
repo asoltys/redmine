@@ -360,22 +360,6 @@ private
     render_404
   end
   
-  # Filter for bulk operations
-  def find_issues
-    @issues = Issue.find_all_by_id(params[:id] || params[:ids])
-    raise ActiveRecord::RecordNotFound if @issues.empty?
-    projects = @issues.collect(&:project).compact.uniq
-    if projects.size == 1
-      @project = projects.first
-    else
-      # TODO: let users bulk edit/move/destroy issues from different projects
-      render_error 'Can not bulk edit/move/destroy issues from different projects'
-      return false
-    end
-  rescue ActiveRecord::RecordNotFound
-    render_404
-  end
-  
   def find_project
     project_id = (params[:issue] && params[:issue][:project_id]) || params[:project_id]
     @project = Project.find(project_id)
@@ -423,17 +407,6 @@ private
     @issue.start_date ||= Date.today
     @priorities = IssuePriority.all
     @allowed_statuses = @issue.new_statuses_allowed_to(User.current, true)
-  end
-
-  def set_flash_from_bulk_issue_save(issues, unsaved_issue_ids)
-    if unsaved_issue_ids.empty?
-      flash[:notice] = l(:notice_successful_update) unless issues.empty?
-    else
-      flash[:error] = l(:notice_failed_to_save_issues,
-                        :count => unsaved_issue_ids.size,
-                        :total => issues.size,
-                        :ids => '#' + unsaved_issue_ids.join(', #'))
-    end
   end
 
   def check_for_default_issue_status
