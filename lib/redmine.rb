@@ -63,10 +63,10 @@ Redmine::AccessControl.map do |map|
                                   :queries => :index,
                                   :reports => [:issue_report, :issue_report_details]}
     map.permission :add_issues, {:issues => [:new, :create, :update_form]}
-    map.permission :edit_issues, {:issues => [:edit, :update, :reply, :bulk_edit, :update_form]}
+    map.permission :edit_issues, {:issues => [:edit, :update, :bulk_edit, :update_form], :journals => [:new]}
     map.permission :manage_issue_relations, {:issue_relations => [:new, :destroy]}
     map.permission :manage_subtasks, {}
-    map.permission :add_issue_notes, {:issues => [:edit, :update, :reply]}
+    map.permission :add_issue_notes, {:issues => [:edit, :update], :journals => [:new]}
     map.permission :edit_issue_notes, {:journals => :edit}, :require => :loggedin
     map.permission :edit_own_issue_notes, {:journals => :edit}, :require => :loggedin
     map.permission :move_issues, {:issue_moves => [:new, :create]}, :require => :loggedin
@@ -184,6 +184,8 @@ Redmine::MenuManager.map :project_menu do |menu|
   menu.push :new_issue, { :controller => 'issues', :action => 'new' }, :param => :project_id, :caption => :label_issue_new,
               :html => { :accesskey => Redmine::AccessKeys.key_for(:new_issue) }
   menu.push :time_entries, {:controller => 'timelog', :action => 'edit'}, :param => :project_id, :caption => :label_log_time 
+  menu.push :gantt, { :controller => 'gantts', :action => 'show' }, :param => :project_id, :caption => :label_gantt
+  menu.push :calendar, { :controller => 'calendars', :action => 'show' }, :param => :project_id, :caption => :label_calendar
   menu.push :news, { :controller => 'news', :action => 'index' }, :param => :project_id, :caption => :label_news_plural
   menu.push :documents, { :controller => 'documents', :action => 'index' }, :param => :project_id, :caption => :label_document_plural
   menu.push :wiki, { :controller => 'wiki', :action => 'index', :page => nil }, 
