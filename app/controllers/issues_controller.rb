@@ -20,13 +20,13 @@ class IssuesController < ApplicationController
   default_search_scope :issues
   
   before_filter :find_issue, :only => [:show, :edit, :update]
-  before_filter :find_issues, :only => [:bulk_edit, :move, :perform_move, :destroy]
-  before_filter :find_project, :only => [:new, :create, :update_form]
-  before_filter :authorize, :except => [:index, :changes, :context_menu]
-  before_filter :find_optional_project, :only => [:index, :changes]
+  before_filter :find_issues, :only => [:bulk_edit, :bulk_update, :move, :perform_move, :destroy]
+  before_filter :find_project, :only => [:new, :create]
+  before_filter :authorize, :except => [:index]
+  before_filter :find_optional_project, :only => [:index]
   before_filter :check_for_default_issue_status, :only => [:new, :create]
   before_filter :build_new_issue_from_params, :only => [:new, :create]
-  accept_key_auth :index, :show, :changes
+  accept_key_auth :index, :show
 
   rescue_from Query::StatementInvalid, :with => :query_statement_invalid
   
@@ -54,6 +54,7 @@ class IssuesController < ApplicationController
          :render => { :nothing => true, :status => :method_not_allowed }
 
   verify :method => :post, :only => :create, :render => {:nothing => true, :status => :method_not_allowed }
+  verify :method => :post, :only => :bulk_update, :render => {:nothing => true, :status => :method_not_allowed }
   verify :method => :put, :only => :update, :render => {:nothing => true, :status => :method_not_allowed }
   
   def index
@@ -95,21 +96,6 @@ class IssuesController < ApplicationController
     render_404
   end
   
-  def changes
-    retrieve_query
-    sort_init 'id', 'desc'
-    sort_update(@query.sortable_columns)
-    
-    if @query.valid?
-      @journals = @query.journals(:order => "#{Journal.table_name}.created_on DESC", 
-                                  :limit => 25)
-    end
-    @title = (@project ? @project.name : Setting.app_title) + ": " + (@query.new_record? ? l(:label_changes_details) : @query.name)
-    render :layout => false, :content_type => 'application/atom+xml'
-  rescue ActiveRecord::RecordNotFound
-    render_404
-  end
-  
   def show
     @journals = @issue.journals.find(:all, :include => [:user, :details], :order => "#{Journal.table_name}.created_on ASC")
     @journals.each_with_index {|j,i| j.indice = i+1}
@@ -124,7 +110,7 @@ class IssuesController < ApplicationController
       format.html { render :template => 'issues/show.rhtml' }
       format.xml  { render :layout => false }
       format.json { render :text => @issue.to_json, :layout => false }
-      format.atom { render :action => 'changes', :layout => false, :content_type => 'application/atom+xml' }
+      format.atom { render :template => 'journals/index', :layout => false, :content_type => 'application/atom+xml' }
       format.pdf  { send_data(issue_to_pdf(@issue), :type => 'application/pdf', :filename => "#{@project.identifier}-#{@issue.id}.pdf") }
     end
   end
@@ -132,7 +118,10 @@ class IssuesController < ApplicationController
   # Add a new issue
   # The new issue will be created from an existing one if copy_from parameter is given
   def new
-    render :action => 'new', :layout => !request.xhr?
+    respond_to do |format|
+      format.html { render :action => 'new', :layout => !request.xhr? }
+      format.js { render :partial => 'attributes' }
+    end
   end
 
   def create
@@ -204,28 +193,27 @@ class IssuesController < ApplicationController
   # Bulk edit a set of issues
   def bulk_edit
     @issues.sort!
-    if request.post?
-      attributes = (params[:issue] || {}).reject {|k,v| v.blank?}
-      attributes.keys.each {|k| attributes[k] = '' if attributes[k] == 'none'}
-      attributes[:custom_field_values].reject! {|k,v| v.blank?} if attributes[:custom_field_values]
-      
-      unsaved_issue_ids = []
-      @issues.each do |issue|
-        issue.reload
-        journal = issue.init_journal(User.current, params[:notes])
-        issue.safe_attributes = attributes
-        call_hook(:controller_issues_bulk_edit_before_save, { :params => params, :issue => issue })
-        unless issue.save
-          # Keep unsaved issue ids to display them in flash error
-          unsaved_issue_ids << issue.id
-        end
-      end
-      set_flash_from_bulk_issue_save(@issues, unsaved_issue_ids)
-      redirect_back_or_default({:controller => 'issues', :action => 'index', :project_id => @project})
-      return
-    end
     @available_statuses = Workflow.available_statuses(@project)
     @custom_fields = @project.all_issue_custom_fields
+  end
+
+  def bulk_update
+    @issues.sort!
+    attributes = parse_params_for_bulk_issue_attributes(params)
+
+    unsaved_issue_ids = []
+    @issues.each do |issue|
+      issue.reload
+      journal = issue.init_journal(User.current, params[:notes])
+      issue.safe_attributes = attributes
+      call_hook(:controller_issues_bulk_edit_before_save, { :params => params, :issue => issue })
+      unless issue.save
+        # Keep unsaved issue ids to display them in flash error
+        unsaved_issue_ids << issue.id
+      end
+    end
+    set_flash_from_bulk_issue_save(@issues, unsaved_issue_ids)
+    redirect_back_or_default({:controller => 'issues', :action => 'index', :project_id => @project})
   end
   
   def destroy
@@ -258,50 +246,7 @@ class IssuesController < ApplicationController
       format.json  { head :ok }
     end
   end
-  
-  def context_menu
-    @issues = Issue.find_all_by_id(params[:ids], :include => :project)
-    if (@issues.size == 1)
-      @issue = @issues.first
-      @allowed_statuses = @issue.new_statuses_allowed_to(User.current)
-    end
-    projects = @issues.collect(&:project).compact.uniq
-    @project = projects.first if projects.size == 1
 
-    @can = {:edit => (@project && User.current.allowed_to?(:edit_issues, @project)),
-            :log_time => (@project && User.current.allowed_to?(:log_time, @project)),
-            :update => (@project && (User.current.allowed_to?(:edit_issues, @project) || (User.current.allowed_to?(:change_status, @project) && @allowed_statuses && !@allowed_statuses.empty?))),
-            :move => (@project && User.current.allowed_to?(:move_issues, @project)),
-            :copy => (@issue && @project.trackers.include?(@issue.tracker) && User.current.allowed_to?(:add_issues, @project)),
-            :delete => (@project && User.current.allowed_to?(:delete_issues, @project))
-            }
-    if @project
-      @assignables = @project.assignable_users
-      @assignables << @issue.assigned_to if @issue && @issue.assigned_to && !@assignables.include?(@issue.assigned_to)
-      @trackers = @project.trackers
-    end
-    
-    @priorities = IssuePriority.all.reverse
-    @statuses = IssueStatus.find(:all, :order => 'position')
-    @back = back_url
-    
-    render :layout => false
-  end
-
-  def update_form
-    if params[:id].blank?
-      @issue = Issue.new
-      @issue.project = @project
-    else
-      @issue = @project.issues.visible.find(params[:id])
-    end
-    @issue.attributes = params[:issue]
-    @allowed_statuses = ([@issue.status] + @issue.status.find_new_statuses_allowed_to(User.current.roles_for_project(@project), @issue.tracker)).uniq
-    @priorities = IssuePriority.all
-    
-    render :partial => 'attributes'
-  end
-  
 private
   def find_issue
     @issue = Issue.find(params[:id], :include => [:project, :tracker, :status, :author, :priority, :category])
@@ -340,8 +285,14 @@ private
 
   # TODO: Refactor, lots of extra code in here
   def build_new_issue_from_params
-    @issue = Issue.new
-    @issue.copy_from(params[:copy_from]) if params[:copy_from]
+    if params[:id].blank?
+      @issue = Issue.new
+      @issue.copy_from(params[:copy_from]) if params[:copy_from]
+      @issue.project = @project
+    else
+      @issue = @project.issues.visible.find(params[:id])
+    end
+    
     @issue.project = @project
     # Tracker must be set before custom field values
     @issue.tracker ||= @project.trackers.find((params[:issue] && params[:issue][:tracker_id]) || params[:tracker_id] || :first)
@@ -364,5 +315,12 @@ private
       render_error l(:error_no_default_issue_status)
       return false
     end
+  end
+
+  def parse_params_for_bulk_issue_attributes(params)
+    attributes = (params[:issue] || {}).reject {|k,v| v.blank?}
+    attributes.keys.each {|k| attributes[k] = '' if attributes[k] == 'none'}
+    attributes[:custom_field_values].reject! {|k,v| v.blank?} if attributes[:custom_field_values]
+    attributes
   end
 end

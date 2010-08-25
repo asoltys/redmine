@@ -107,6 +107,8 @@ ActionController::Routing::Routes.draw do |map|
   map.auto_complete_issues '/issues/auto_complete', :controller => 'auto_completes', :action => 'issues'
   # TODO: would look nicer as /issues/:id/preview
   map.preview_issue '/issues/preview/:id', :controller => 'previews', :action => 'issue'
+  map.issues_context_menu '/issues/context_menu', :controller => 'context_menus', :action => 'issues'
+  map.issue_changes '/issues/changes', :controller => 'journals', :action => 'index'
   
   map.with_options :controller => 'issues' do |issues_routes|
     issues_routes.with_options :conditions => {:method => :get} do |issues_views|
@@ -130,6 +132,7 @@ ActionController::Routing::Routes.draw do |map|
       issues_actions.connect 'issues/:id/quoted', :controller => 'journals', :action => 'new', :id => /\d+/
       issues_actions.connect 'issues/:id/:action', :action => /edit|destroy/, :id => /\d+/
       issues_actions.connect 'issues.:format', :action => 'create', :format => /xml/
+      issues_actions.connect 'issues/bulk_edit', :action => 'bulk_update'
     end
     issues_routes.with_options :conditions => {:method => :put} do |issues_actions|
       issues_actions.connect 'issues/:id/edit', :action => 'update', :id => /\d+/

@@ -104,6 +104,13 @@ class RoutingTest < ActionController::IntegrationTest
 
     should_route :get, "/issues/preview/123", :controller => 'previews', :action => 'issue', :id => '123'
     should_route :post, "/issues/preview/123", :controller => 'previews', :action => 'issue', :id => '123'
+    should_route :get, "/issues/context_menu", :controller => 'context_menus', :action => 'issues'
+    should_route :post, "/issues/context_menu", :controller => 'context_menus', :action => 'issues'
+
+    should_route :get, "/issues/changes", :controller => 'journals', :action => 'index'
+
+    should_route :get, "/issues/bulk_edit", :controller => 'issues', :action => 'bulk_edit'
+    should_route :post, "/issues/bulk_edit", :controller => 'issues', :action => 'bulk_update'
   end
 
   context "issue categories" do
