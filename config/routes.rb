@@ -276,6 +276,7 @@ ActionController::Routing::Routes.draw do |map|
  
   # Install the default route as the lowest priority.
   map.connect ':controller/:action/:id'
+  map.connect ':controller/:action'
   map.connect 'robots.txt', :controller => 'welcome', :action => 'robots'
   # Used for OpenID
   map.root :controller => 'account', :action => 'login'
