@@ -129,8 +129,8 @@ ActionController::Routing::Routes.draw do |map|
   map.connect '/issues', :controller => 'issues', :action => 'index', :conditions => { :method => :post }
   map.connect '/issues/create', :controller => 'issues', :action => 'index', :conditions => { :method => :post }
   
-  map.resources :issues, :member => { :edit => :post }, :collection => {}
   map.resources :issues, :path_prefix => '/projects/:project_id', :collection => { :create => :post }
+  map.resources :issues, :member => { :edit => :post }, :collection => {}
 
   map.with_options  :controller => 'issue_relations', :conditions => {:method => :post} do |relations|
     relations.connect 'issues/:issue_id/relations/:id', :action => 'new'
