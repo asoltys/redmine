@@ -40,6 +40,9 @@ module Redmine
         when :week
           @startdt = date - (date.cwday - first_wday)%7
           @enddt = date + (last_wday - date.cwday)%7
+        when :three_week_window
+          @startdt = (date - 7) - (date.cwday - first_wday)%7
+          @enddt = (date + 7) + (last_wday - date.cwday)%7
         else
           raise 'Invalid period'
         end
