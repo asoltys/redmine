@@ -18,4 +18,5 @@
 /tmp/sockets/*
 /tmp/test/*
 /vendor/rails
+.rvmrc
 *.rbc
