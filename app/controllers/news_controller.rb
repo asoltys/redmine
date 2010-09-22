@@ -60,23 +60,16 @@ class NewsController < ApplicationController
       end
     end
   end
-  
+
   def edit
-    if request.post? and @news.update_attributes(params[:news])
-      flash[:notice] = l(:notice_successful_update)
-      redirect_to :action => 'show', :id => @news
-    end
   end
   
-  def add_comment
-    @comment = Comment.new(params[:comment])
-    @comment.author = User.current
-    if @news.comments << @comment
-      flash[:notice] = l(:label_comment_added)
+  def update
+    if request.put? and @news.update_attributes(params[:news])
+      flash[:notice] = l(:notice_successful_update)
       redirect_to :action => 'show', :id => @news
     else
-      show
-      render :action => 'show'
+      render :action => 'edit'
     end
   end
 
