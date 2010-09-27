@@ -113,19 +113,8 @@ class NewsControllerTest < ActionController::TestCase
   
   def test_destroy
     @request.session[:user_id] = 2
-    post :destroy, :id => 1
+    delete :destroy, :id => 1
     assert_redirected_to 'projects/ecookbook/news'
     assert_nil News.find_by_id(1)
-  end
-  
-  def test_preview
-    get :preview, :project_id => 1,
-                  :news => {:title => '',
-                            :description => 'News description',
-                            :summary => ''}
-    assert_response :success
-    assert_template 'common/_preview'
-    assert_tag :tag => 'fieldset', :attributes => { :class => 'preview' },
-                                   :content => /News description/
   end
 end
