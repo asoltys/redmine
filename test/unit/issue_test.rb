@@ -544,7 +544,7 @@ class IssueTest < ActiveSupport::TestCase
     assert issue.save
     assert_equal 1, ActionMailer::Base.deliveries.size
   end
-  
+
   def test_stale_issue_should_not_send_email_notification
     ActionMailer::Base.deliveries.clear
     issue = Issue.find(1)
@@ -737,5 +737,50 @@ class IssueTest < ActiveSupport::TestCase
     issue.project = Project.find(2)
     assert issue.save
     assert_equal before, Issue.on_active_project.length
+  end
+
+  context "Issue#recipients" do
+    setup do
+      @project = Project.find(1)
+      @author = User.generate_with_protected!
+      @assignee = User.generate_with_protected!
+      @issue = Issue.generate_for_project!(@project, :assigned_to => @assignee, :author => @author)
+    end
+    
+    should "include project recipients" do
+      assert @project.recipients.present?
+      @project.recipients.each do |project_recipient|
+        assert @issue.recipients.include?(project_recipient)
+      end
+    end
+
+    should "include the author if the author is active" do
+      assert @issue.author, "No author set for Issue"
+      assert @issue.recipients.include?(@issue.author.mail)
+    end
+    
+    should "include the assigned to user if the assigned to user is active" do
+      assert @issue.assigned_to, "No assigned_to set for Issue"
+      assert @issue.recipients.include?(@issue.assigned_to.mail)
+    end
+
+    should "not include users who opt out of all email" do
+      @author.update_attribute(:mail_notification, :none)
+
+      assert !@issue.recipients.include?(@issue.author.mail)
+    end
+
+    should "not include the issue author if they are only notified of assigned issues" do
+      @author.update_attribute(:mail_notification, :only_assigned)
+
+      assert !@issue.recipients.include?(@issue.author.mail)
+    end
+
+    should "not include the assigned user if they are only notified of owned issues" do
+      @assignee.update_attribute(:mail_notification, :only_owner)
+
+      assert !@issue.recipients.include?(@issue.assigned_to.mail)
+    end
+
   end
 end

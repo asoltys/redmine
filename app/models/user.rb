@@ -33,6 +33,15 @@ class User < Principal
     :username => '#{login}'
   }
 
+  MAIL_NOTIFICATION_OPTIONS = [
+                               [:all, :label_user_mail_option_all],
+                               [:selected, :label_user_mail_option_selected],
+                               [:none, :label_user_mail_option_none],
+                               [:only_my_events, :label_user_mail_option_only_my_events],
+                               [:only_assigned, :label_user_mail_option_only_assigned],
+                               [:only_owner, :label_user_mail_option_only_owner]
+                              ]
+
   has_and_belongs_to_many :groups, :after_add => Proc.new {|user, group| group.user_added(user)},
                                    :after_remove => Proc.new {|user, group| group.user_removed(user)}
   has_many :issue_categories, :foreign_key => 'assigned_to_id', :dependent => :nullify
@@ -65,7 +74,7 @@ class User < Principal
   validates_confirmation_of :password, :allow_nil => true
 
   def before_create
-    self.mail_notification = false
+    self.mail_notification = Setting.default_notification_option
     true
   end
   
@@ -357,6 +366,41 @@ class User < Principal
   # See allowed_to? for the actions and valid options.
   def allowed_to_globally?(action, options)
     allowed_to?(action, nil, options.reverse_merge(:global => true))
+  end
+  
+  # Utility method to help check if a user should be notified about an
+  # event.
+  #
+  # TODO: only supports Issue events currently
+  def notify_about?(object)
+    case mail_notification.to_sym
+    when :all
+      true
+    when :selected
+      # Handled by the Project
+    when :none
+      false
+    when :only_my_events
+      if object.is_a?(Issue) && (object.author == self || object.assigned_to == self)
+        true
+      else
+        false
+      end
+    when :only_assigned
+      if object.is_a?(Issue) && object.assigned_to == self
+        true
+      else
+        false
+      end
+    when :only_owner
+      if object.is_a?(Issue) && object.author == self
+        true
+      else
+        false
+      end
+    else
+      false
+    end
   end
   
   def self.current=(user)
