@@ -23,7 +23,7 @@ class TimeEntry < ActiveRecord::Base
   belongs_to :user
   belongs_to :activity, :class_name => 'TimeEntryActivity', :foreign_key => 'activity_id'
   
-  attr_protected :project_id, :user_id, :tyear, :tmonth, :tweek
+  attr_protected :tyear, :tmonth, :tweek
 
   acts_as_customizable
   acts_as_event :title => Proc.new {|o| "#{l_hours(o.hours)} (#{(o.issue || o.project).event_title})"},

@@ -117,7 +117,8 @@ class TimelogController < ApplicationController
   def create
     @time_entry ||= TimeEntry.new(:project => @project, :issue => @issue, :user => User.current, :spent_on => User.current.today)
     @time_entry.attributes = params[:time_entry]
-    
+    @time_entry.project_id = @project.id unless params[:time_entry]
+    @time_entry.user_id = User.current.id unless params[:time_entry]
     call_hook(:controller_timelog_edit_before_save, { :params => params, :time_entry => @time_entry })
     
     if @time_entry.save
