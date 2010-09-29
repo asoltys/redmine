@@ -72,14 +72,12 @@ module TimelogHelper
   def options_for_period_select(value)
     options_for_select([[l(:label_all_time), 'all'],
                         [l(:label_today), 'today'],
-                        [l(:label_yesterday), 'yesterday'],
-                        [l(:label_this_week), 'current_week'],
-                        [l(:label_last_week), 'last_week'],
-                        [l(:label_last_n_days, 7), '7_days'],
-                        [l(:label_this_month), 'current_month'],
-                        [l(:label_last_month), 'last_month'],
                         [l(:label_last_n_days, 30), '30_days'],
-                        [l(:label_this_year), 'current_year']],
+                        [l(:label_fiscal_year), 'fiscal_year'],
+                        [l(:label_q1), 'q1'],
+                        [l(:label_q2), 'q2'],
+                        [l(:label_q3), 'q3'],
+                        [l(:label_q4), 'q4']],
                         value)
   end
   
