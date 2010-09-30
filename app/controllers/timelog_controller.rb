@@ -117,8 +117,7 @@ class TimelogController < ApplicationController
   def create
     @time_entry ||= TimeEntry.new(:project => @project, :issue => @issue, :user => User.current, :spent_on => User.current.today)
     @time_entry.attributes = params[:time_entry]
-    @time_entry.project_id = @project.id unless params[:time_entry]
-    @time_entry.user_id = User.current.id unless params[:time_entry]
+    
     call_hook(:controller_timelog_edit_before_save, { :params => params, :time_entry => @time_entry })
     
     if @time_entry.save
@@ -274,9 +273,6 @@ private
     @available_criterias = { 'project' => {:sql => "#{TimeEntry.table_name}.project_id",
                                           :klass => Project,
                                           :label => :label_project},
-                             'deliverable' => {:sql => "#{Issue.table_name}.deliverable_id",
-                                          :klass => Deliverable,
-                                          :label => :label_agreement},
                              'version' => {:sql => "#{Issue.table_name}.fixed_version_id",
                                           :klass => Version,
                                           :label => :label_version},
