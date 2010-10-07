@@ -19,9 +19,9 @@ ActionController::Routing::Routes.draw do |map|
   map.connect 'projects/:project_id/issues/:issue_id/time_entries/new', :action => 'edit', :controller => 'timelog'
   
   map.with_options :controller => 'timelog' do |timelog|
-    timelog.connect 'projects/:project_id/time_entries', :action => 'details'
+    timelog.connect 'projects/:project_id/time_entries', :action => 'index'
     
-    timelog.with_options :action => 'details', :conditions => {:method => :get}  do |time_details|
+    timelog.with_options :action => 'index', :conditions => {:method => :get}  do |time_details|
       time_details.connect 'time_entries'
       time_details.connect 'time_entries.:format'
       time_details.connect 'issues/:issue_id/time_entries'
@@ -30,8 +30,8 @@ ActionController::Routing::Routes.draw do |map|
       time_details.connect 'projects/:project_id/issues/:issue_id/time_entries'
       time_details.connect 'projects/:project_id/issues/:issue_id/time_entries.:format'
     end
-    timelog.connect 'projects/:project_id/time_entries/report', :action => 'report'
-    timelog.with_options :action => 'report',:conditions => {:method => :get} do |time_report|
+    timelog.connect 'projects/:project_id/time_entries/report', :controller => 'time_entry_reports', :action => 'report'
+    timelog.with_options :controller => 'time_entry_reports', :action => 'report',:conditions => {:method => :get} do |time_report|
       time_report.connect 'time_entries/report'
       time_report.connect 'time_entries/report.:format'
       time_report.connect 'projects/:project_id/time_entries/report.:format'
@@ -138,23 +138,22 @@ ActionController::Routing::Routes.draw do |map|
   end
 
   map.connect 'projects/:id/members/new', :controller => 'members', :action => 'new'
-  
+
   map.with_options :controller => 'users' do |users|
-    users.with_options :conditions => {:method => :get} do |user_views|
-      user_views.connect 'users', :action => 'index'
-      user_views.connect 'users/:id', :action => 'show', :id => /\d+/
-      user_views.connect 'users/new', :action => 'add'
-      user_views.connect 'users/:id/edit/:tab', :action => 'edit', :tab => nil
-    end
+    users.connect 'users/:id/edit/:tab', :action => 'edit', :tab => nil, :conditions => {:method => :get}
+    
     users.with_options :conditions => {:method => :post} do |user_actions|
-      user_actions.connect 'users', :action => 'add'
-      user_actions.connect 'users/new', :action => 'create'
-      user_actions.connect 'users/:id/edit', :action => 'edit'
       user_actions.connect 'users/:id/memberships', :action => 'edit_membership'
       user_actions.connect 'users/:id/memberships/:membership_id', :action => 'edit_membership'
       user_actions.connect 'users/:id/memberships/:membership_id/destroy', :action => 'destroy_membership'
     end
   end
+
+  map.resources :users, :member => {
+    :edit_membership => :post,
+    :destroy_membership => :post
+  },
+  :except => [:destroy]
 
   # For nice "roadmap" in the url for the index action
   map.connect 'projects/:project_id/roadmap', :controller => 'versions', :action => 'index'
