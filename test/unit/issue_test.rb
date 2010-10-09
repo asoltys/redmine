@@ -532,9 +532,28 @@ class IssueTest < ActiveSupport::TestCase
       assert Issue.new(:start_date => 100.days.ago.to_date, :due_date => Date.today, :done_ratio => 90).behind_schedule?
     end
   end
-  
-  def test_assignable_users
-    assert_kind_of User, Issue.find(1).assignable_users.first
+
+  context "#assignable_users" do
+    should "be Users" do
+      assert_kind_of User, Issue.find(1).assignable_users.first
+    end
+
+    should "include the issue author" do
+      project = Project.find(1)
+      non_project_member = User.generate!
+      issue = Issue.generate_for_project!(project, :author => non_project_member)
+
+      assert issue.assignable_users.include?(non_project_member)
+    end
+
+    should "not show the issue author twice" do
+      assignable_user_ids = Issue.find(1).assignable_users.collect(&:id)
+      assert_equal 2, assignable_user_ids.length
+      
+      assignable_user_ids.each do |user_id|
+        assert_equal 1, assignable_user_ids.count(user_id), "User #{user_id} appears more or less than once"
+      end
+    end
   end
   
   def test_create_should_send_email_notification

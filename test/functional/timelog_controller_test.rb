@@ -31,9 +31,9 @@ class TimelogControllerTest < ActionController::TestCase
     @response   = ActionController::TestResponse.new
   end
   
-  def test_get_edit
+  def test_get_new
     @request.session[:user_id] = 3
-    get :edit, :project_id => 1
+    get :new, :project_id => 1
     assert_response :success
     assert_template 'edit'
     # Default activity selected
@@ -41,6 +41,15 @@ class TimelogControllerTest < ActionController::TestCase
                                  :content => 'Development'
   end
   
+  def test_get_new_should_only_show_active_time_entry_activities
+    @request.session[:user_id] = 3
+    get :new, :project_id => 1
+    assert_response :success
+    assert_template 'edit'
+    assert_no_tag :tag => 'option', :content => 'Inactive Activity'
+                                    
+  end
+
   def test_get_edit_existing_time
     @request.session[:user_id] = 2
     get :edit, :id => 2, :project_id => nil
@@ -50,15 +59,6 @@ class TimelogControllerTest < ActionController::TestCase
     assert_tag :tag => 'form', :attributes => { :action => '/projects/ecookbook/timelog/edit/2' }
   end
   
-  def test_get_edit_should_only_show_active_time_entry_activities
-    @request.session[:user_id] = 3
-    get :edit, :project_id => 1
-    assert_response :success
-    assert_template 'edit'
-    assert_no_tag :tag => 'option', :content => 'Inactive Activity'
-                                    
-  end
-
   def test_get_edit_with_an_existing_time_entry_with_inactive_activity
     te = TimeEntry.find(1)
     te.activity = TimeEntryActivity.find_by_name("Inactive Activity")
@@ -72,11 +72,11 @@ class TimelogControllerTest < ActionController::TestCase
     assert_tag :tag => 'option', :content => '--- Please select ---'
   end
   
-  def test_post_edit
+  def test_post_create
     # TODO: should POST to issues’ time log instead of project. change form
     # and routing
     @request.session[:user_id] = 3
-    post :edit, :project_id => 1,
+    post :create, :project_id => 1,
                 :time_entry => {:comments => 'Some work on TimelogControllerTest',
                                 # Not the default activity
                                 :activity_id => '11',
