@@ -8,6 +8,7 @@ class CalendarsController < ApplicationController
   helper :projects
   helper :queries
   include QueriesHelper
+  helper :sort
   include SortHelper
 
   def show
