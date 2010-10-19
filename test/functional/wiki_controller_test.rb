@@ -197,7 +197,7 @@ class WikiControllerTest < ActionController::TestCase
   def test_destroy_child
     @request.session[:user_id] = 2
     post :destroy, :id => 1, :page => 'Child_1'
-    assert_redirected_to :action => 'special', :id => 'ecookbook', :page => 'Page_index'
+    assert_redirected_to :action => 'page_index', :id => 'ecookbook'
   end
   
   def test_destroy_parent
@@ -214,7 +214,7 @@ class WikiControllerTest < ActionController::TestCase
     assert_difference('WikiPage.count', -1) do
       post :destroy, :id => 1, :page => 'Another_page', :todo => 'nullify'
     end
-    assert_redirected_to :action => 'special', :id => 'ecookbook', :page => 'Page_index'
+    assert_redirected_to :action => 'page_index', :id => 'ecookbook'
     assert_nil WikiPage.find_by_id(2)
   end
   
@@ -223,7 +223,7 @@ class WikiControllerTest < ActionController::TestCase
     assert_difference('WikiPage.count', -3) do
       post :destroy, :id => 1, :page => 'Another_page', :todo => 'destroy'
     end
-    assert_redirected_to :action => 'special', :id => 'ecookbook', :page => 'Page_index'
+    assert_redirected_to :action => 'page_index', :id => 'ecookbook'
     assert_nil WikiPage.find_by_id(2)
     assert_nil WikiPage.find_by_id(5)
   end
@@ -233,15 +233,15 @@ class WikiControllerTest < ActionController::TestCase
     assert_difference('WikiPage.count', -1) do
       post :destroy, :id => 1, :page => 'Another_page', :todo => 'reassign', :reassign_to_id => 1
     end
-    assert_redirected_to :action => 'special', :id => 'ecookbook', :page => 'Page_index'
+    assert_redirected_to :action => 'page_index', :id => 'ecookbook'
     assert_nil WikiPage.find_by_id(2)
     assert_equal WikiPage.find(1), WikiPage.find_by_id(5).parent
   end
   
   def test_page_index
-    get :special, :id => 'ecookbook', :page => 'Page_index'
+    get :page_index, :id => 'ecookbook'
     assert_response :success
-    assert_template 'special_page_index'
+    assert_template 'page_index'
     pages = assigns(:pages)
     assert_not_nil pages
     assert_equal Project.find(1).wiki.pages.size, pages.size
@@ -255,6 +255,46 @@ class WikiControllerTest < ActionController::TestCase
                                                                                  :content => 'Page with an inline image' } } } },
                     :child => { :tag => 'li', :child => { :tag => 'a', :attributes => { :href => '/projects/ecookbook/wiki/Another_page' },
                                                                        :content => 'Another page' } }
+  end
+
+  context "GET :export" do
+    context "with an authorized user to export the wiki" do
+      setup do
+        @request.session[:user_id] = 2
+        get :export, :id => 'ecookbook'
+      end
+      
+      should_respond_with :success
+      should_assign_to :pages
+      should_respond_with_content_type "text/html"
+      should "export all of the wiki pages to a single html file" do
+        assert_select "a[name=?]", "CookBook_documentation"
+        assert_select "a[name=?]", "Another_page"
+        assert_select "a[name=?]", "Page_with_an_inline_image"
+      end
+      
+    end
+
+    context "with an unauthorized user" do
+      setup do
+        get :export, :id => 'ecookbook'
+
+        should_respond_with :redirect
+        should_redirect_to('wiki index') { {:action => 'index', :id => @project, :page => nil} }
+      end
+    end
+  end
+
+  context "GET :date_index" do
+    setup do
+      get :date_index, :id => 'ecookbook'
+    end
+
+    should_respond_with :success
+    should_assign_to :pages
+    should_assign_to :pages_by_date
+    should_render_template 'wiki/date_index'
+    
   end
   
   def test_not_found

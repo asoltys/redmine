@@ -166,37 +166,26 @@ class WikiController < ApplicationController
       end
     end
     @page.destroy
-    redirect_to :action => 'special', :id => @project, :page => 'Page_index'
+    redirect_to :action => 'page_index', :id => @project
   end
 
-  # display special pages
-  def special
-    page_title = params[:page].downcase
-    case page_title
-    # show pages index, sorted by title
-    when 'page_index', 'date_index'
-      # eager load information about last updates, without loading text
-      @pages = @wiki.pages.find :all, :select => "#{WikiPage.table_name}.*, #{WikiContent.table_name}.updated_on",
-                                      :joins => "LEFT JOIN #{WikiContent.table_name} ON #{WikiContent.table_name}.page_id = #{WikiPage.table_name}.id",
-                                      :order => 'title'
-      @pages_by_date = @pages.group_by {|p| p.updated_on.to_date}
-      @pages_by_parent_id = @pages.group_by(&:parent_id)
-    # export wiki to a single html file
-    when 'export'
-      if User.current.allowed_to?(:export_wiki_pages, @project)
-        @pages = @wiki.pages.find :all, :order => 'title'
-        export = render_to_string :action => 'export_multiple', :layout => false
-        send_data(export, :type => 'text/html', :filename => "wiki.html")
-      else
-        redirect_to :action => 'index', :id => @project, :page => nil
-      end
-      return      
+  # Export wiki to a single html file
+  def export
+    if User.current.allowed_to?(:export_wiki_pages, @project)
+      @pages = @wiki.pages.find :all, :order => 'title'
+      export = render_to_string :action => 'export_multiple', :layout => false
+      send_data(export, :type => 'text/html', :filename => "wiki.html")
     else
-      # requested special page doesn't exist, redirect to default page
       redirect_to :action => 'index', :id => @project, :page => nil
-      return
     end
-    render :action => "special_#{page_title}"
+  end
+
+  def page_index
+    load_pages_grouped_by_date_without_content
+  end
+
+  def date_index
+    load_pages_grouped_by_date_without_content
   end
   
   def preview
@@ -245,4 +234,14 @@ private
     extend helper unless self.instance_of?(helper)
     helper.instance_method(:initial_page_content).bind(self).call(page)
   end
+
+  # eager load information about last updates, without loading text
+  def load_pages_grouped_by_date_without_content
+    @pages = @wiki.pages.find :all, :select => "#{WikiPage.table_name}.*, #{WikiContent.table_name}.updated_on",
+                                    :joins => "LEFT JOIN #{WikiContent.table_name} ON #{WikiContent.table_name}.page_id = #{WikiPage.table_name}.id",
+                                    :order => 'title'
+    @pages_by_date = @pages.group_by {|p| p.updated_on.to_date}
+    @pages_by_parent_id = @pages.group_by(&:parent_id)
+  end
+  
 end
