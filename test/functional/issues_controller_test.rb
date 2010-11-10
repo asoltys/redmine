@@ -125,11 +125,42 @@ class IssuesControllerTest < ActionController::TestCase
     assert_tag :tag => 'a', :content => /Issue of a private subproject/
   end
   
-  def test_index_with_project_and_filter
+  def test_index_with_project_and_default_filter
     get :index, :project_id => 1, :set_filter => 1
     assert_response :success
     assert_template 'index.rhtml'
     assert_not_nil assigns(:issues)
+    
+    query = assigns(:query)
+    assert_not_nil query
+    # default filter
+    assert_equal({'status_id' => {:operator => 'o', :values => ['']}}, query.filters)
+  end
+  
+  def test_index_with_project_and_filter
+    get :index, :project_id => 1, :set_filter => 1, 
+      :fields => ['tracker_id'],
+      :operators => {'tracker_id' => '='},
+      :values => {'tracker_id' => ['1']} 
+    assert_response :success
+    assert_template 'index.rhtml'
+    assert_not_nil assigns(:issues)
+    
+    query = assigns(:query)
+    assert_not_nil query
+    assert_equal({'tracker_id' => {:operator => '=', :values => ['1']}}, query.filters)
+  end
+  
+  def test_index_with_project_and_empty_filters
+    get :index, :project_id => 1, :set_filter => 1, :fields => ['']
+    assert_response :success
+    assert_template 'index.rhtml'
+    assert_not_nil assigns(:issues)
+    
+    query = assigns(:query)
+    assert_not_nil query
+    # no filter
+    assert_equal({}, query.filters)
   end
   
   def test_index_with_query
@@ -378,6 +409,7 @@ class IssuesControllerTest < ActionController::TestCase
                             :subject => 'This is the test_new issue',
                             :description => 'This is the description',
                             :priority_id => 5,
+                            :start_date => '2010-11-07',
                             :estimated_hours => '',
                             :custom_field_values => {'2' => 'Value for field 2'}}
     end
@@ -388,10 +420,31 @@ class IssuesControllerTest < ActionController::TestCase
     assert_equal 2, issue.author_id
     assert_equal 3, issue.tracker_id
     assert_equal 2, issue.status_id
+    assert_equal Date.parse('2010-11-07'), issue.start_date
     assert_nil issue.estimated_hours
     v = issue.custom_values.find(:first, :conditions => {:custom_field_id => 2})
     assert_not_nil v
     assert_equal 'Value for field 2', v.value
+  end
+  
+  def test_post_create_without_start_date
+    @request.session[:user_id] = 2
+    assert_difference 'Issue.count' do
+      post :create, :project_id => 1, 
+                 :issue => {:tracker_id => 3,
+                            :status_id => 2,
+                            :subject => 'This is the test_new issue',
+                            :description => 'This is the description',
+                            :priority_id => 5,
+                            :start_date => '',
+                            :estimated_hours => '',
+                            :custom_field_values => {'2' => 'Value for field 2'}}
+    end
+    assert_redirected_to :controller => 'issues', :action => 'show', :id => Issue.last.id
+    
+    issue = Issue.find_by_subject('This is the test_new issue')
+    assert_not_nil issue
+    assert_nil issue.start_date
   end
   
   def test_post_create_and_continue

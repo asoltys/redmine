@@ -27,7 +27,7 @@ class IssuesController < ApplicationController
   before_filter :find_optional_project, :only => [:index]
   before_filter :check_for_default_issue_status, :only => [:new, :create]
   before_filter :build_new_issue_from_params, :only => [:new, :create]
-  accept_key_auth :index, :show
+  accept_key_auth :index, :show, :create, :update, :destroy
 
   rescue_from Query::StatementInvalid, :with => :query_statement_invalid
   
@@ -305,6 +305,7 @@ private
       render_error l(:error_no_tracker_in_project)
       return false
     end
+    @issue.start_date ||= Date.today
     if params[:issue].is_a?(Hash)
       @issue.safe_attributes = params[:issue]
       if User.current.allowed_to?(:add_issue_watchers, @project) && @issue.new_record?
@@ -312,7 +313,6 @@ private
       end
     end
     @issue.author = User.current
-    @issue.start_date ||= Date.today
     @priorities = IssuePriority.all
     @allowed_statuses = @issue.new_statuses_allowed_to(User.current, true)
   end
