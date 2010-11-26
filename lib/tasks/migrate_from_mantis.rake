@@ -40,7 +40,7 @@ task :migrate_from_mantis => :environment do
                         90 => closed_status    # closed
                         }
                         
-      priorities = Enumeration.priorities
+      priorities = IssuePriority.all
       DEFAULT_PRIORITY = priorities[2]
       PRIORITY_MAPPING = {10 => priorities[1], # none
                           20 => priorities[1], # low
@@ -120,12 +120,8 @@ task :migrate_from_mantis => :environment do
       has_many :news, :class_name => "MantisNews", :foreign_key => :project_id
       has_many :members, :class_name => "MantisProjectUser", :foreign_key => :project_id
       
-      def name
-        read_attribute(:name)[0..29]
-      end
-      
       def identifier
-        read_attribute(:name).underscore[0..19].gsub(/[^a-z0-9\-]/, '-')
+        read_attribute(:name).gsub(/[^a-z0-9\-]+/, '-').slice(0, Project::IDENTIFIER_MAX_LENGTH)
       end
     end
     
@@ -331,6 +327,7 @@ task :migrate_from_mantis => :environment do
     	next unless i.save
     	issues_map[bug.id] = i.id
     	print '.'
+      STDOUT.flush
 
         # Assignee
         # Redmine checks that the assignee is a project member
@@ -378,6 +375,7 @@ task :migrate_from_mantis => :environment do
         r.issue_to = Issue.find_by_id(issues_map[relation.destination_bug_id])
         pp r unless r.save
         print '.'
+        STDOUT.flush
       end
       puts
       
@@ -393,6 +391,7 @@ task :migrate_from_mantis => :environment do
         n.author = User.find_by_id(users_map[news.poster_id])
         n.save
         print '.'
+        STDOUT.flush
       end
       puts
       
@@ -409,7 +408,7 @@ task :migrate_from_mantis => :environment do
                                  :is_required => field.require_report?
         next unless f.save
         print '.'
-        
+        STDOUT.flush
         # Trackers association
         f.trackers = Tracker.find :all
         
@@ -475,6 +474,7 @@ task :migrate_from_mantis => :environment do
   
   puts "WARNING: Your Redmine data will be deleted during this process."
   print "Are you sure you want to continue ? [y/N] "
+  STDOUT.flush
   break unless STDIN.gets.match(/^y$/i)
   
   # Default Mantis database settings
@@ -494,6 +494,7 @@ task :migrate_from_mantis => :environment do
     
   while true
     print "encoding [UTF-8]: "
+    STDOUT.flush
     encoding = STDIN.gets.chomp!
     encoding = 'UTF-8' if encoding.blank?
     break if MantisMigrate.encoding encoding

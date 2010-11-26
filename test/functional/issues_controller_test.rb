@@ -525,6 +525,20 @@ class IssuesControllerTest < ActionController::TestCase
     assert_not_nil issue
     assert_equal Issue.find(2), issue.parent
   end
+
+  def test_post_create_subissue_with_non_numeric_parent_id
+    @request.session[:user_id] = 2
+    
+    assert_difference 'Issue.count' do
+      post :create, :project_id => 1, 
+                 :issue => {:tracker_id => 1,
+                            :subject => 'This is a child issue',
+                            :parent_issue_id => 'ABC'}
+    end
+    issue = Issue.find_by_subject('This is a child issue')
+    assert_not_nil issue
+    assert_nil issue.parent
+  end
   
   def test_post_create_should_send_a_notification
     ActionMailer::Base.deliveries.clear
@@ -580,7 +594,7 @@ class IssuesControllerTest < ActionController::TestCase
   context "without workflow privilege" do
     setup do
       Workflow.delete_all(["role_id = ?", Role.anonymous.id])
-      Role.anonymous.add_permission! :add_issues
+      Role.anonymous.add_permission! :add_issues, :add_issue_notes
     end
     
     context "#new" do
@@ -605,6 +619,17 @@ class IssuesControllerTest < ActionController::TestCase
         assert_equal IssueStatus.default, issue.status
       end
       
+      should "accept default status" do
+        assert_difference 'Issue.count' do
+          post :create, :project_id => 1, 
+                     :issue => {:tracker_id => 1,
+                                :subject => 'This is an issue',
+                                :status_id => 1}
+        end
+        issue = Issue.last(:order => 'id')
+        assert_equal IssueStatus.default, issue.status
+      end
+      
       should "ignore unauthorized status" do
         assert_difference 'Issue.count' do
           post :create, :project_id => 1, 
@@ -614,6 +639,94 @@ class IssuesControllerTest < ActionController::TestCase
         end
         issue = Issue.last(:order => 'id')
         assert_equal IssueStatus.default, issue.status
+      end
+    end
+    
+    context "#update" do
+      should "ignore status change" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:status_id => 3}
+        end
+        assert_equal 1, Issue.find(1).status_id
+      end
+      
+      should "ignore attributes changes" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:subject => 'changed', :assigned_to_id => 2}
+        end
+        issue = Issue.find(1)
+        assert_equal "Can't print recipes", issue.subject
+        assert_nil issue.assigned_to
+      end
+    end
+  end
+  
+  context "with workflow privilege" do
+    setup do
+      Workflow.delete_all(["role_id = ?", Role.anonymous.id])
+      Workflow.create!(:role => Role.anonymous, :tracker_id => 1, :old_status_id => 1, :new_status_id => 3)
+      Workflow.create!(:role => Role.anonymous, :tracker_id => 1, :old_status_id => 1, :new_status_id => 4)
+      Role.anonymous.add_permission! :add_issues, :add_issue_notes
+    end
+    
+    context "#update" do
+      should "accept authorized status" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:status_id => 3}
+        end
+        assert_equal 3, Issue.find(1).status_id
+      end
+      
+      should "ignore unauthorized status" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:status_id => 2}
+        end
+        assert_equal 1, Issue.find(1).status_id
+      end
+      
+      should "accept authorized attributes changes" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:assigned_to_id => 2}
+        end
+        issue = Issue.find(1)
+        assert_equal 2, issue.assigned_to_id
+      end
+      
+      should "ignore unauthorized attributes changes" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:subject => 'changed'}
+        end
+        issue = Issue.find(1)
+        assert_equal "Can't print recipes", issue.subject
+      end
+    end
+    
+    context "and :edit_issues permission" do
+      setup do
+        Role.anonymous.add_permission! :add_issues, :edit_issues
+      end
+
+      should "accept authorized status" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:status_id => 3}
+        end
+        assert_equal 3, Issue.find(1).status_id
+      end
+      
+      should "ignore unauthorized status" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:status_id => 2}
+        end
+        assert_equal 1, Issue.find(1).status_id
+      end
+      
+      should "accept authorized attributes changes" do
+        assert_difference 'Journal.count' do
+          put :update, :id => 1, :notes => 'just trying', :issue => {:subject => 'changed', :assigned_to_id => 2}
+        end
+        issue = Issue.find(1)
+        assert_equal "changed", issue.subject
+        assert_equal 2, issue.assigned_to_id
       end
     end
   end
@@ -638,7 +751,8 @@ class IssuesControllerTest < ActionController::TestCase
   
   def test_get_edit_with_params
     @request.session[:user_id] = 2
-    get :edit, :id => 1, :issue => { :status_id => 5, :priority_id => 7 }
+    get :edit, :id => 1, :issue => { :status_id => 5, :priority_id => 7 },
+        :time_entry => { :hours => '2.5', :comments => 'test_get_edit_with_params', :activity_id => TimeEntryActivity.first.id }
     assert_response :success
     assert_template 'edit'
     
@@ -656,6 +770,12 @@ class IssuesControllerTest < ActionController::TestCase
                         :child => { :tag => 'option', 
                                     :content => 'Urgent',
                                     :attributes => { :selected => 'selected' } }
+
+    assert_tag :input, :attributes => { :name => 'time_entry[hours]', :value => '2.5' }
+    assert_tag :select, :attributes => { :name => 'time_entry[activity_id]' },
+                        :child => { :tag => 'option',
+                                    :attributes => { :selected => 'selected', :value => TimeEntryActivity.first.id } }
+    assert_tag :input, :attributes => { :name => 'time_entry[comments]', :value => 'test_get_edit_with_params' }
   end
 
   def test_update_edit_form
