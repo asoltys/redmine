@@ -22,7 +22,7 @@ class ApplicationController < ActionController::Base
   include Redmine::I18n
 
   layout 'base'
-  exempt_from_layout 'builder'
+  exempt_from_layout 'builder', 'apit'
   
   # Remove broken cookie after upgrade from 0.8.x (#4292)
   # See https://rails.lighthouseapp.com/projects/8994/tickets/3360
@@ -413,5 +413,17 @@ class ApplicationController < ActionController::Base
       { attribute => error }
     end.to_json
   end
-  
+
+  # Renders API response on validation failure
+  def render_validation_errors(object)
+    options = { :status => :unprocessable_entity, :layout => false }
+    options.merge!(case params[:format]
+      when 'xml';  { :xml =>  object.errors }
+      when 'json'; { :json => {'errors' => object.errors} } # ActiveResource client compliance
+      else
+        raise "Unknown format #{params[:format]} in #render_validation_errors"
+      end
+    )
+    render options
+  end
 end
