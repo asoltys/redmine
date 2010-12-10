@@ -36,7 +36,7 @@ module Redmine
           if args.any?
             if args.first.is_a?(Hash)
               if @struct.last.is_a?(Array)
-                @struct.last << args.first
+                @struct.last << args.first unless block
               else
                 @struct.last[sym] = args.first
               end
@@ -50,13 +50,17 @@ module Redmine
           end
           
           if block
-            @struct << {}
+            @struct << (args.first.is_a?(Hash) ? args.first : {})
             block.call(self)
             ret = @struct.pop
             if @struct.last.is_a?(Array)
               @struct.last << ret
             else
-              @struct.last[sym] = ret
+              if @struct.last.has_key?(sym) && @struct.last[sym].is_a?(Hash)
+                @struct.last[sym].merge! ret
+              else
+                @struct.last[sym] = ret
+              end
             end
           end
         end

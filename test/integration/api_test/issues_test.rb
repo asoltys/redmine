@@ -89,6 +89,120 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
   context "/issues/6.json" do
     should_allow_api_authentication(:get, "/issues/6.json")
   end
+  
+  context "GET /issues/:id" do
+    context "with journals" do
+      context ".xml" do
+        should "display journals" do
+          get '/issues/1.xml'
+          
+          assert_tag :tag => 'issue',
+            :child => {
+              :tag => 'journals',
+              :attributes => { :type => 'array' },
+              :child => {
+                :tag => 'journal',
+                :attributes => { :id => '1'},
+                :child => {
+                  :tag => 'details',
+                  :attributes => { :type => 'array' },
+                  :child => {
+                    :tag => 'detail',
+                    :attributes => { :name => 'status_id' },
+                    :child => {
+                      :tag => 'old_value',
+                      :content => '1',
+                      :sibling => {
+                        :tag => 'new_value',
+                        :content => '2'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        end
+      end
+    end
+    
+    context "with custom fields" do
+      context ".xml" do
+        should "display custom fields" do
+          get '/issues/3.xml'
+          
+          assert_tag :tag => 'issue', 
+            :child => {
+              :tag => 'custom_fields',
+              :attributes => { :type => 'array' },
+              :child => {
+                :tag => 'custom_field',
+                :attributes => { :id => '1'},
+                :child => {
+                  :tag => 'value',
+                  :content => 'MySQL'
+                }
+              }
+            }
+            
+          assert_nothing_raised do
+            Hash.from_xml(response.body).to_xml
+          end
+        end
+      end
+    end
+    
+    context "with subtasks" do
+      setup do
+        @c1 = Issue.generate!(:status_id => 1, :subject => "child c1", :tracker_id => 1, :project_id => 1, :parent_issue_id => 1)
+        @c2 = Issue.generate!(:status_id => 1, :subject => "child c2", :tracker_id => 1, :project_id => 1, :parent_issue_id => 1)
+        @c3 = Issue.generate!(:status_id => 1, :subject => "child c3", :tracker_id => 1, :project_id => 1, :parent_issue_id => @c1.id)
+      end
+      
+      context ".xml" do
+        should "display children" do
+          get '/issues/1.xml'
+          
+          assert_tag :tag => 'issue', 
+            :child => {
+              :tag => 'children',
+              :children => {:count => 2},
+              :child => {
+                :tag => 'issue',
+                :attributes => {:id => @c1.id.to_s},
+                :child => {
+                  :tag => 'subject',
+                  :content => 'child c1',
+                  :sibling => {
+                    :tag => 'children',
+                    :children => {:count => 1},
+                    :child => {
+                      :tag => 'issue',
+                      :attributes => {:id => @c3.id.to_s}
+                    }
+                  }
+                }
+              }
+            }
+        end
+        
+        context ".json" do
+          should "display children" do
+            get '/issues/1.json'
+            
+            json = ActiveSupport::JSON.decode(response.body)
+            assert_equal([
+              {
+                'id' => @c1.id, 'subject' => 'child c1', 'tracker' => {'id' => 1, 'name' => 'Bug'},
+                'children' => [{ 'id' => @c3.id, 'subject' => 'child c3', 'tracker' => {'id' => 1, 'name' => 'Bug'} }]
+              },
+              { 'id' => @c2.id, 'subject' => 'child c2', 'tracker' => {'id' => 1, 'name' => 'Bug'} }
+              ],
+              json['issue']['children'])
+          end
+        end
+      end
+    end
+  end
 
   context "POST /issues.xml" do
     should_allow_api_authentication(:post,
@@ -202,6 +316,23 @@ class ApiTest::IssuesTest < ActionController::IntegrationTest
       assert_equal "API update", issue.subject
     end
     
+  end
+  
+  context "PUT /issues/3.xml with custom fields" do
+    setup do
+      @parameters = {:issue => {:custom_fields => [{'id' => '1', 'value' => 'PostgreSQL' }, {'id' => '2', 'value' => '150'}]}}
+      @headers = { :authorization => credentials('jsmith') }
+    end
+    
+    should "update custom fields" do
+      assert_no_difference('Issue.count') do
+        put '/issues/3.xml', @parameters, @headers
+      end
+      
+      issue = Issue.find(3)
+      assert_equal '150', issue.custom_value_for(2).value
+      assert_equal 'PostgreSQL', issue.custom_value_for(1).value
+    end
   end
   
   context "PUT /issues/6.xml with failed update" do
