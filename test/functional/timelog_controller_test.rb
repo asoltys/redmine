@@ -109,7 +109,7 @@ class TimelogControllerTest < ActionController::TestCase
     
     assert_equal 8, entry.hours
     assert_equal 2, entry.issue_id
-    assert_equal 2, entry.user_id
+    assert_equal 1, entry.user_id
   end
   
   def test_destroy
