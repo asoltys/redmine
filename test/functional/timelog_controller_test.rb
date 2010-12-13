@@ -103,6 +103,7 @@ class TimelogControllerTest < ActionController::TestCase
                 :time_entry => {:comments => 'Some work on TimelogControllerTest',
                                 # Not the default activity
                                 :activity_id => '11',
+                                :issue_id => '',
                                 :spent_on => '2008-03-14',
                                 :hours => '7.3'}
     assert_redirected_to :action => 'index', :project_id => 'ecookbook'
