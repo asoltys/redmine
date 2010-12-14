@@ -200,13 +200,10 @@ private
   end
 
   def find_project
-    issue_id = (params[:issue_id] || params[:time_entry] && params[:time_entry][:issue_id]).to_i
-    project_id = (params[:project_id] || params[:time_entry] && params[:time_entry][:project_id])
-
-    if issue_id > 0
+    if (issue_id = (params[:issue_id] || params[:time_entry] && params[:time_entry][:issue_id])).present?
       @issue = Issue.find(issue_id)
       @project = @issue.project
-    elsif project_id
+    elsif (project_id = (params[:project_id] || params[:time_entry] && params[:time_entry][:project_id])).present?
       @project = Project.find(project_id)
     else
       render_404
