@@ -394,7 +394,7 @@ module ApplicationHelper
   
   def page_header_title
     if @project.nil? || @project.new_record?
-      h(Setting.app_title)
+      h(l(Setting.app_title))
     else
       b = []
       ancestors = (@project.root? ? [] : @project.ancestors.visible)
@@ -417,7 +417,7 @@ module ApplicationHelper
       title = []
       title << @project.name if @project
       title += @html_title if @html_title
-      title << Setting.app_title
+      title << l(Setting.app_title)
       title.select {|t| !t.blank? }.join(' - ')
     else
       @html_title ||= []

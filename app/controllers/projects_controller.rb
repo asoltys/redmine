@@ -57,7 +57,7 @@ class ProjectsController < ApplicationController
       format.atom {
         projects = Project.visible.find(:all, :order => 'created_on DESC',
                                               :limit => Setting.feeds_limit.to_i)
-        render_feed(projects, :title => "#{Setting.app_title}: #{l(:label_project_latest)}")
+        render_feed(projects, :title => "#{l(Setting.app_title)}: #{l(:label_project_latest)}")
       }
     end
   end

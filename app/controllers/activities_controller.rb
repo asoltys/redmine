@@ -36,7 +36,7 @@ class ActivitiesController < ApplicationController
           elsif @activity.scope.size == 1
             title = l("label_#{@activity.scope.first.singularize}_plural")
           end
-          render_feed(events, :title => "#{@project || Setting.app_title}: #{title}")
+          render_feed(events, :title => "#{@project || l(Setting.app_title)}: #{title}")
         }
       end
     end

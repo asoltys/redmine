@@ -39,7 +39,7 @@ class JournalsController < ApplicationController
       @journals = @query.journals(:order => "#{Journal.table_name}.created_on DESC", 
                                   :limit => 25)
     end
-    @title = (@project ? @project.name : Setting.app_title) + ": " + (@query.new_record? ? l(:label_changes_details) : @query.name)
+    @title = (@project ? @project.name : l(Setting.app_title)) + ": " + (@query.new_record? ? l(:label_changes_details) : @query.name)
     render :layout => false, :content_type => 'application/atom+xml'
   rescue ActiveRecord::RecordNotFound
     render_404

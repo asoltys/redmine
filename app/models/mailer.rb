@@ -228,7 +228,7 @@ class Mailer < ActionMailer::Base
   def account_information(user, password)
     set_language_if_valid user.language
     recipients user.mail
-    subject l(:mail_subject_register, Setting.app_title)
+    subject l(:mail_subject_register, l(Setting.app_title))
     body :user => user,
          :password => password,
          :login_url => url_for(:controller => 'account', :action => 'login')
@@ -243,7 +243,7 @@ class Mailer < ActionMailer::Base
   def account_activation_request(user)
     # Send the email to all active administrators
     recipients User.active.find(:all, :conditions => {:admin => true}).collect { |u| u.mail }.compact
-    subject l(:mail_subject_account_activation_request, Setting.app_title)
+    subject l(:mail_subject_account_activation_request, l(Setting.app_title))
     body :user => user,
          :url => url_for(:controller => 'users', :action => 'index', :status => User::STATUS_REGISTERED, :sort_key => 'created_on', :sort_order => 'desc')
     render_multipart('account_activation_request', body)
@@ -257,7 +257,7 @@ class Mailer < ActionMailer::Base
   def account_activated(user)
     set_language_if_valid user.language
     recipients user.mail
-    subject l(:mail_subject_register, Setting.app_title)
+    subject l(:mail_subject_register, l(Setting.app_title))
     body :user => user,
          :login_url => url_for(:controller => 'account', :action => 'login')
     render_multipart('account_activated', body)
@@ -266,7 +266,7 @@ class Mailer < ActionMailer::Base
   def lost_password(token)
     set_language_if_valid(token.user.language)
     recipients token.user.mail
-    subject l(:mail_subject_lost_password, Setting.app_title)
+    subject l(:mail_subject_lost_password, l(Setting.app_title))
     body :token => token,
          :url => url_for(:controller => 'account', :action => 'lost_password', :token => token.value)
     render_multipart('lost_password', body)
@@ -275,7 +275,7 @@ class Mailer < ActionMailer::Base
   def register(token)
     set_language_if_valid(token.user.language)
     recipients token.user.mail
-    subject l(:mail_subject_register, Setting.app_title)
+    subject l(:mail_subject_register, l(Setting.app_title))
     body :token => token,
          :url => url_for(:controller => 'account', :action => 'activate', :token => token.value)
     render_multipart('register', body)
@@ -367,7 +367,7 @@ class Mailer < ActionMailer::Base
     # Common headers
     headers 'X-Mailer' => 'Redmine',
             'X-Redmine-Host' => Setting.host_name,
-            'X-Redmine-Site' => Setting.app_title,
+            'X-Redmine-Site' => l(Setting.app_title),
             'Precedence' => 'bulk',
             'Auto-Submitted' => 'auto-generated'
   end

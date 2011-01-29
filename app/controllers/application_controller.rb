@@ -321,7 +321,7 @@ class ApplicationController < ActionController::Base
     @items = items || []
     @items.sort! {|x,y| y.event_datetime <=> x.event_datetime }
     @items = @items.slice(0, Setting.feeds_limit.to_i)
-    @title = options[:title] || Setting.app_title
+    @title = options[:title] || l(Setting.app_title)
     render :template => "common/feed.atom.rxml", :layout => false, :content_type => 'application/atom+xml'
   end
   
