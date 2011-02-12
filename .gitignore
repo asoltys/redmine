@@ -1,4 +1,5 @@
-/public/*.swf
+/.project
+/.loadpath
 /config/additional_environment.rb
 /config/configuration.yml
 /config/database.yml
