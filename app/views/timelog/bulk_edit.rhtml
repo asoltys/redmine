@@ -1,0 +1,35 @@
+<h2><%= l(:label_bulk_edit_selected_time_entries) %></h2>
+
+<ul><%= @time_entries.collect {|i| content_tag('li', link_to(h("#{i.tracker} ##{i.id}"), { :action => 'show', :id => i }) + h(": #{i.subject}")) }.join("\n") %></ul>
+
+<% form_tag(:action => 'bulk_update') do %>
+<%= @time_entries.collect {|i| hidden_field_tag('ids[]', i.id)}.join %>
+<div class="box tabular">
+<fieldset class="attributes">
+<legend><%= l(:label_change_properties) %></legend>
+<div>
+
+<% if @available_activities.any? %>
+<p>
+	<label><%= l(:field_activity) %></label>
+	<%= select_tag('time_entry[activity_id]', "<option value=\"\">#{l(:label_no_change_option)}</option>" + options_from_collection_for_select(@available_activities, :id, :name)) %>
+</p>
+<% end %>
+
+<% @custom_fields.each do |custom_field| %>
+	<p><label><%= h(custom_field.name) %></label> <%= custom_field_tag_for_bulk_edit('time_entry', custom_field) %></p>
+<% end %>
+
+<%= call_hook(:view_time_entries_bulk_edit_details_bottom, { :time_entries => @time_entries }) %>
+</div>
+
+</fieldset>
+
+<fieldset><legend><%= l(:field_notes) %></legend>
+<%= text_area_tag 'notes', @notes, :cols => 60, :rows => 10, :class => 'wiki-edit' %>
+<%= wikitoolbar_for 'notes' %>
+</fieldset>
+</div>
+
+<p><%= submit_tag l(:button_submit) %></p>
+<% end %>
