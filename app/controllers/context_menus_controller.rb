@@ -40,5 +40,15 @@ class ContextMenusController < ApplicationController
     
     render :layout => false
   end
-  
+
+  def time_entries
+    @time_entries = TimeEntry.find(:all, :conditions => {:project_id => 2 })
+    @activities = Enumeration.find(:all)
+    @can = {:edit => User.current.allowed_to?(:log_time, @projects),
+            :update => User.current.allowed_to?(:log_time, @projects),
+            :delete => User.current.allowed_to?(:log_time, @projects)
+            }
+
+    render :layout => false
+  end  
 end

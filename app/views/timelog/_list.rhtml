@@ -4,6 +4,7 @@
     <%= stylesheet_link_tag 'context_menu_rtl' if l(:direction) == 'rtl' %>
 <% end %>
 
+<% form_tag({}) do -%>	
 <table class="list time-entries">
 <thead>
 <tr>
@@ -19,7 +20,7 @@
 </thead>
 <tbody>
 <% entries.each do |entry| -%>
-<tr class="time-entry <%= cycle("odd", "even") %>">
+<tr class="time-entry <%= cycle("odd", "even") %> hascontextmenu">
 <td class="spent_on"><%= format_date(entry.spent_on) %></td>
 <td class="user"><%=h entry.user %></td>
 <td class="activity"><%=h entry.activity %></td>
@@ -45,3 +46,6 @@
 <% end -%>
 </tbody>
 </table>
+<% end -%>
+
+<%= context_menu time_entries_context_menu_path %>

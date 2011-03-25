@@ -1,4 +1,5 @@
 ActionController::Routing::Routes.draw do |map|
+  map.time_entries_context_menu '/time_entries/context_menu', :controller => 'context_menus', :action => 'time_entries'
   # Add your own custom routes here.
   # The priority is based upon order of creation: first created -> highest priority.
   
@@ -101,6 +102,7 @@ ActionController::Routing::Routes.draw do |map|
   map.resources :issues, :path_prefix => '/projects/:project_id', :collection => { :create => :post } do |issues|
     issues.resources :time_entries, :controller => 'timelog'
   end
+  # map.time_entries_context_menu '/time_entries/context_menu', :controller => 'context_menus', :action => 'time_entries'
 
   map.with_options  :controller => 'issue_relations', :conditions => {:method => :post} do |relations|
     relations.connect 'issues/:issue_id/relations/:id', :action => 'new'
