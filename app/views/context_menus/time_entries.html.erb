@@ -1,0 +1,26 @@
+<ul>
+  <%= call_hook(:view_time_entries_context_menu_start, {:time_entries => @time_entries, :can => @can, :back => @back }) %>
+
+<% if !@issue.nil? -%>
+	<li><%= context_menu_link l(:button_edit), {:controller => 'timelog', :action => 'edit', :id => @issue},
+	        :class => 'icon-edit', :disabled => !@can[:edit] %></li>
+<% else %>
+	<li><%= context_menu_link l(:button_edit), {:controller => 'timelog', :action => 'bulk_edit', :ids => @time_entries.collect(&:id)},
+	        :class => 'icon-edit', :disabled => !@can[:edit] %></li>
+<% end %>
+	<% if @activities.present? -%>
+	<li class="folder">			
+		<a href="#" class="submenu"><%= l(:field_activity) %></a>
+		<ul>
+		<% @activities.each do |u| -%>
+		    <li><%= context_menu_link u.name, {:controller => 'timelog', :action => 'bulk_edit', :ids => @time_entries.collect(&:id), :issue => {'activity_id' => u}, :back_url => @back}, :method => :post,
+		                              :selected => (@issue && u == @issue.activity), :disabled => !@can[:update] %></li>
+		<% end -%>
+		    <li><%= context_menu_link l(:label_nobody), {:controller => 'timelog', :action => 'bulk_edit', :ids => @time_entries.collect(&:id), :issue => {'activity_id' => 'none'}, :back_url => @back}, :method => :post,
+		                              :selected => (@issue && @issue.activity.nil?), :disabled => !@can[:update] %></li>
+		</ul>
+	</li>
+	<% end %>
+
+  <%= call_hook(:view_time_entries_context_menu_end, {:time_entries => @time_entries, :can => @can, :back => @back }) %>
+</ul>
