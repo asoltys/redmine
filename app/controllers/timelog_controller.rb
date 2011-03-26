@@ -160,6 +160,30 @@ class TimelogController < ApplicationController
     end    
   end
 
+  def bulk_edit
+    @time_entries.sort!
+    @available_activities = TimeEntryActivity.shared.active
+    @custom_fields = @projects.map{|p|p.all_time_entry_custom_fields}.inject{|memo,c|memo & c}
+  end
+
+  def bulk_update
+    @time_entries.sort!
+    attributes = parse_params_for_bulk_time_entry_attributes(params)
+
+    unsaved_time_entry_ids = []
+    @time_entries.each do |time_entry|
+      time_entry.reload
+      time_entry.safe_attributes = attributes
+      call_hook(:controller_time_entries_bulk_edit_before_save, { :params => params, :time_entry => issue })
+      unless time_entry.save
+        # Keep unsaved time_entry ids to display them in flash error
+        unsaved_time_entry_ids << issue.id
+      end
+    end
+    set_flash_from_bulk_time_entry_save(@time_entries, unsaved_issue_ids)
+    redirect_back_or_default({:controller => 'time_entries', :action => 'index', :project_id => @project})
+  end
+
   verify :method => :delete, :only => :destroy, :render => {:nothing => true, :status => :method_not_allowed }
   def destroy
     if @time_entry.destroy && @time_entry.destroyed?
