@@ -162,7 +162,6 @@ class TimelogController < ApplicationController
   end
 
   def bulk_edit
-    @time_entries.sort!
     @available_activities = TimeEntryActivity.shared.active
     @custom_fields = TimeEntry.first.available_custom_fields
   end
