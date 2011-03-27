@@ -19,6 +19,7 @@ class TimelogController < ApplicationController
   menu_item :issues
   before_filter :find_project, :only => [:new, :create]
   before_filter :find_time_entry, :only => [:show, :edit, :update, :destroy]
+  before_filter :find_time_entries, :only => [:bulk_edit, :bulk_update]
   before_filter :authorize, :except => [:index]
   before_filter :find_optional_project, :only => [:index]
   accept_key_auth :index, :show, :create, :update, :destroy
@@ -163,7 +164,7 @@ class TimelogController < ApplicationController
   def bulk_edit
     @time_entries.sort!
     @available_activities = TimeEntryActivity.shared.active
-    @custom_fields = @projects.map{|p|p.all_time_entry_custom_fields}.inject{|memo,c|memo & c}
+    @custom_fields = TimeEntry.first.available_custom_fields
   end
 
   def bulk_update

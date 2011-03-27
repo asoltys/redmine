@@ -1,5 +1,4 @@
 ActionController::Routing::Routes.draw do |map|
-  map.time_entries_context_menu '/time_entries/context_menu', :controller => 'context_menus', :action => 'time_entries'
   # Add your own custom routes here.
   # The priority is based upon order of creation: first created -> highest priority.
   
@@ -21,6 +20,10 @@ ActionController::Routing::Routes.draw do |map|
     time_report.connect 'time_entries/report.:format'
     time_report.connect 'projects/:project_id/time_entries/report.:format'
   end
+
+  map.bulk_edit_time_entry 'time_entries/bulk_edit', :controller => 'timelog', :action => 'bulk_edit', :conditions => { :method => :get }
+  map.bulk_update_time_entry 'time_entries/bulk_edit', :controller => 'timelog', :action => 'bulk_update', :conditions => { :method => :post }
+  map.time_entries_context_menu '/time_entries/context_menu', :controller => 'context_menus', :action => 'time_entries'
 
   # TODO: wasteful since this is also nested under issues, projects, and projects/issues
   map.resources :time_entries, :controller => 'timelog'
@@ -98,8 +101,6 @@ ActionController::Routing::Routes.draw do |map|
   map.resources :issues, :member => { :edit => :post }, :collection => {} do |issues|
     issues.resources :time_entries, :controller => 'timelog'
   end
-  map.bulk_edit_time_entry 'time_entries/bulk_edit', :controller => 'timelog', :action => 'bulk_edit', :conditions => { :method => :get }
-  map.bulk_update_time_entry 'time_entries/bulk_edit', :controller => 'timelog', :action => 'bulk_update', :conditions => { :method => :post }
   
   map.resources :issues, :path_prefix => '/projects/:project_id', :collection => { :create => :post } do |issues|
     issues.resources :time_entries, :controller => 'timelog'
