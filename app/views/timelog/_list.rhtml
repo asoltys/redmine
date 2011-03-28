@@ -5,6 +5,7 @@
 <% end %>
 
 <% form_tag({}) do -%>	
+<%= hidden_field_tag 'back_url', url_for(params) %>
 <table class="list time-entries">
 <thead>
 <tr>

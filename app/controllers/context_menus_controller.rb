@@ -54,6 +54,8 @@ class ContextMenusController < ApplicationController
             :delete => User.current.allowed_to?(:log_time, @projects)
             }
 
+    @back = back_url
+
     render :layout => false
   end  
 end

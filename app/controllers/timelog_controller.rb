@@ -180,7 +180,7 @@ class TimelogController < ApplicationController
       end
     end
     set_flash_from_bulk_time_entry_save(@time_entries, unsaved_time_entry_ids)
-    redirect_back_or_default({:controller => 'time_entries', :action => 'index', :project_id => @project})
+    redirect_back_or_default({:controller => 'timelog', :action => 'index', :project_id => @project})
   end
 
   verify :method => :delete, :only => :destroy, :render => {:nothing => true, :status => :method_not_allowed }
