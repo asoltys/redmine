@@ -18,7 +18,7 @@
 
 <p>
   <label><%= l(:field_comments) %></label>
-  <%= text_field('time_entry[comments]', :comments, :size => 100) %>
+  <%= text_field(:time_entry, :comments, :size => 100) %>
 </p>
 
 <% @custom_fields.each do |custom_field| %>
