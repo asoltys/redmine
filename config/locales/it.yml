@@ -945,3 +945,4 @@ it:
   button_expand_all: Expand all
   button_collapse_all: Collapse all
   label_bulk_edit_selected_time_entries: Bulk edit selected time entries
+  text_time_entries_destroy_confirmation: Are you sure you want to delete the selected time entr(y/ies) ?
