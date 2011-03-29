@@ -943,3 +943,4 @@ el:
   label_news_comment_added: Comment added to a news
   button_expand_all: Expand all
   button_collapse_all: Collapse all
+  label_bulk_edit_selected_time_entries: Bulk edit selected time entries
