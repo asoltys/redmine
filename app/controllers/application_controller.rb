@@ -226,7 +226,6 @@ class ApplicationController < ActionController::Base
   rescue ActiveRecord::RecordNotFound
     render_404
   end
-
   
   # Check if project is unique before bulk operations
   def check_project_uniqueness
